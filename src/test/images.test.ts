@@ -1,0 +1,60 @@
+import { describe, expect, it } from 'vitest'
+import { upscaleArtwork } from '@/providers/itunesMovies'
+import { ACTIVITIES } from '@/data/activities'
+
+describe('iTunes artwork upscaling', () => {
+  it('replaces the 100px thumbnail with a poster-shaped full-size image', () => {
+    expect(
+      upscaleArtwork('https://is1-ssl.mzstatic.com/image/thumb/abc/source/100x100bb.jpg'),
+    ).toBe('https://is1-ssl.mzstatic.com/image/thumb/abc/source/600x900bb.jpg')
+  })
+
+  it('handles the sizes iTunes returns, with or without the bb suffix', () => {
+    for (const size of ['60x60bb.jpg', '100x100.jpg', '30x30bb.png', '512x512bb.jpg']) {
+      const result = upscaleArtwork(`https://example.com/img/${size}`)
+      expect(result).toBe('https://example.com/img/600x900bb.jpg')
+    }
+  })
+
+  it('leaves an unrecognised URL untouched rather than corrupting it', () => {
+    const url = 'https://example.com/poster.jpg'
+    expect(upscaleArtwork(url)).toBe(url)
+  })
+
+  it('passes undefined through', () => {
+    expect(upscaleArtwork(undefined)).toBeUndefined()
+  })
+})
+
+describe('activity photo queries', () => {
+  it('gives every activity a non-empty, ASCII search query', () => {
+    for (const activity of ACTIVITIES) {
+      expect(activity.photo, activity.id).toBeTruthy()
+      expect(activity.photo.length, activity.id).toBeGreaterThan(2)
+      // Commons search behaves best with plain English terms.
+      expect(activity.photo, activity.id).toMatch(/^[a-z0-9 ]+$/)
+    }
+  })
+
+  it('does not reuse the same query for every entry', () => {
+    const unique = new Set(ACTIVITIES.map((a) => a.photo))
+    expect(unique.size).toBeGreaterThan(ACTIVITIES.length * 0.9)
+  })
+})
+
+describe('photo lookup budget', () => {
+  it('gives up rather than delaying a deck when the source hangs', async () => {
+    const { findPhotos } = await import('@/lib/photos')
+    const original = globalThis.fetch
+    // A source that never answers.
+    globalThis.fetch = (() => new Promise(() => {})) as typeof fetch
+    try {
+      const started = Date.now()
+      const result = await findPhotos(['a', 'b', 'c'], 800, undefined, 150)
+      expect(Date.now() - started).toBeLessThan(1000)
+      expect(result).toEqual([null, null, null])
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+})

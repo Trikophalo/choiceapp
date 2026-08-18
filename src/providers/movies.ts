@@ -2,6 +2,7 @@ import type { Card, DeckProvider, DeckOptions } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
 import { FALLBACK_MOVIES } from '@/data/fallbackMovies'
+import { fetchItunesMovies } from './itunesMovies'
 
 // TMDB: free non-commercial key, CORS-enabled, and fully localised — a single
 // /discover call returns a whole deck with German titles and synopses.
@@ -44,10 +45,19 @@ export const moviesProvider: DeckProvider = {
   id: 'movies',
   capabilities: { needsLocation: false, supportsRatingFilter: false },
 
-  async fetchDeck({ locale, size, seed, signal }: DeckOptions): Promise<Card[]> {
+  async fetchDeck(options: DeckOptions): Promise<Card[]> {
+    const { locale, size, seed, signal } = options
+
     if (!API_KEY) {
-      // No key configured (e.g. a fork without secrets): the bundled snapshot
-      // keeps the category browsable instead of dead.
+      // No TMDB key (the default for a fresh deployment). iTunes Search needs
+      // no key at all and ships real posters, so the category stays useful
+      // rather than falling back to text-only cards.
+      try {
+        const cards = await fetchItunesMovies(options)
+        if (cards.length) return cards
+      } catch (err) {
+        if (signal?.aborted) throw err
+      }
       return seededShuffle(FALLBACK_MOVIES, seed).slice(0, size).map(toCard)
     }
 
@@ -74,6 +84,13 @@ export const moviesProvider: DeckProvider = {
       return seededShuffle(results, seed).slice(0, size).map(toCard)
     } catch (err) {
       if (signal?.aborted) throw err
+      // TMDB failed despite a key — try the keyless source before giving up.
+      try {
+        const cards = await fetchItunesMovies(options)
+        if (cards.length) return cards
+      } catch {
+        // fall through to the bundled snapshot
+      }
       return seededShuffle(FALLBACK_MOVIES, seed).slice(0, size).map(toCard)
     }
   },

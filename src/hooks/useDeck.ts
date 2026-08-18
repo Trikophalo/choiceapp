@@ -28,7 +28,7 @@ export function useDeck(
 
   const reload = useCallback(() => setNonce((n) => n + 1), [])
 
-  const { locale, size, seed, radiusM, minRating } = options
+  const { locale, size, seed, radiusM } = options
   const locationKey = options.location
     ? `${options.location.lat.toFixed(4)},${options.location.lng.toFixed(4)}`
     : ''
@@ -55,7 +55,7 @@ export function useDeck(
       })
 
     return () => controller.abort()
-  }, [category, enabled, locale, size, seed, radiusM, minRating, locationKey, nonce])
+  }, [category, enabled, locale, size, seed, radiusM, locationKey, nonce])
 
   return { cards, loading, error, reload }
 }

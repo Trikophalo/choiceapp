@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Card, SwipeDirection } from '@/types'
 import { SwipeCard } from './SwipeCard'
+import { CardDetails } from './CardDetails'
 import { tapFeedback } from '@/lib/haptics'
 
 interface CardStackProps {
@@ -20,15 +21,16 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
     cardId: string
     direction: SwipeDirection
   } | null>(null)
+  const [detailCard, setDetailCard] = useState<Card | null>(null)
   const top = cards[index]
 
   const trigger = useCallback(
     (direction: SwipeDirection) => {
-      if (!top || triggered) return
+      if (!top || triggered || detailCard) return
       tapFeedback(direction === 'like' ? [12, 40, 12] : 10)
       setTriggered({ cardId: top.id, direction })
     },
-    [top, triggered],
+    [top, triggered, detailCard],
   )
 
   useEffect(() => {
@@ -60,7 +62,13 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
               triggered?.cardId === card.id ? triggered.direction : null
             }
             onSwipe={(direction) => handleSwipe(card, direction)}
-            labels={{ like: t('swipe.like'), nope: t('swipe.nope') }}
+            onOpenDetails={() => setDetailCard(card)}
+            labels={{
+              like: t('swipe.like'),
+              nope: t('swipe.nope'),
+              details: t('details.open', { title: card.title }),
+              stock: t('swipe.stockBadge'),
+            }}
           />
         ))}
       </div>
@@ -89,9 +97,14 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
         </button>
       </div>
 
-      <p className="hidden text-sm text-ink-faint sm:block">
-        {t('swipe.keyboardHint')}
+      <p className="text-center text-sm text-ink-faint">
+        <span className="sm:hidden">{t('details.hint')}</span>
+        <span className="hidden sm:inline">
+          {t('details.hint')} · {t('swipe.keyboardHint')}
+        </span>
       </p>
+
+      <CardDetails card={detailCard} onClose={() => setDetailCard(null)} />
     </div>
   )
 }

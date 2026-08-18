@@ -18,14 +18,15 @@
   },
   "home": {
     "greeting": "What are we deciding?",
-    "pickCategory": "Pick a category",
+    "pickCategory": "What are we deciding on?",
     "modeSolo": "Just me",
     "modeGroup": "With friends",
     "modeSoloHint": "The first card you like wins.",
     "modeGroupHint": "Everyone swipes. The first card you all like wins.",
     "start": "Start swiping",
     "createSession": "Create a group",
-    "theme": "Appearance"
+    "theme": "Appearance",
+    "pickMode": "Who is deciding?"
   },
   "categories": {
     "restaurants": "Restaurants",
@@ -43,10 +44,6 @@
     "title": "Narrow it down",
     "radius": "Search radius",
     "radiusValue": "{{km}} km",
-    "minRating": "Minimum rating",
-    "anyRating": "Any",
-    "ratingValue": "{{rating}}+ ★",
-    "ratingUnavailable": "Star ratings need the enhanced restaurant source, which isn't configured. Results come from OpenStreetMap.",
     "useLocation": "Use my location",
     "locating": "Finding you…",
     "locationDenied": "Location permission was denied. Search for a city instead.",
@@ -71,7 +68,8 @@
     "errorTitle": "Something went wrong",
     "errorBody": "The source didn't respond. Check your connection and try again.",
     "noRestaurantsTitle": "No places nearby",
-    "noRestaurantsBody": "Nothing matched within {{km}} km. Try a wider radius."
+    "noRestaurantsBody": "Nothing matched within {{km}} km. Try a wider radius.",
+    "stockBadge": "Stock photo"
   },
   "result": {
     "soloTitle": "Your pick",
@@ -129,9 +127,11 @@
     "youLabel": "you",
     "hostLabel": "host",
     "swipedAll": "finished",
-    "demoNoticeTitle": "Demo sync",
-    "demoNoticeBody": "No sync backend is configured, so group rounds only work between tabs on this device — open a second tab to play along. Add Firebase settings to play across phones.",
-    "backHome": "Back to start"
+    "demoNoticeTitle": "This link will not reach another phone",
+    "demoNoticeBody": "No sync backend is configured, so this round only works between tabs in this browser. Open a second tab to try it out. To play with friends on their own phones, add Firebase settings (see README).",
+    "backHome": "Back to start",
+    "noBackendTitle": "Group rounds are not set up yet",
+    "noBackendBody": "This link only works in the browser that created it, because no sync backend is configured. Ask the host to add Firebase settings — the README explains how in about three minutes."
   },
   "language": {
     "label": "Language",
@@ -151,8 +151,6 @@
     "phone": "Phone",
     "website": "Website",
     "distanceM": "Distance",
-    "rating": "Rating",
-    "reviews": "Reviews",
     "priceLevel": "Price",
     "summary": "About",
     "glass": "Glass",
@@ -162,10 +160,17 @@
     "area": "Cuisine",
     "year": "Year",
     "overview": "Synopsis",
-    "tags": "Good for"
+    "tags": "Good for",
+    "rated": "Rated"
   },
   "footer": {
     "attribution": "Movie data from TMDB. Drinks and recipes from TheCocktailDB and TheMealDB. Places from OpenStreetMap contributors.",
     "tmdbDisclaimer": "This product uses the TMDB API but is not endorsed or certified by TMDB."
+  },
+  "details": {
+    "open": "Details for {{title}}",
+    "hint": "Tap the card for details",
+    "backToSwiping": "Back to swiping",
+    "stockPhoto": "Illustrative photo — not this exact place."
   }
 }

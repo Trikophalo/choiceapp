@@ -30,6 +30,11 @@ export function ResultView({ card, title, subtitle, onAgain, againLabel }: Resul
   )
   const longText =
     card.meta?.instructions ?? card.meta?.overview ?? card.meta?.summary
+  // Avoid printing the subtitle and a long text that merely extends it.
+  const subtitleIsPreview =
+    card.subtitle != null &&
+    longText != null &&
+    longText.startsWith(card.subtitle.replace(/…$/, '').trim().slice(0, 40))
 
   const share = async () => {
     const text = t('result.shareText', { title: card.title })
@@ -66,7 +71,7 @@ export function ResultView({ card, title, subtitle, onAgain, againLabel }: Resul
           />
         </div>
 
-        {card.subtitle && (
+        {card.subtitle && !subtitleIsPreview && (
           <p className="mt-5 max-w-sm text-center leading-relaxed text-ink-muted">
             {card.subtitle}
           </p>

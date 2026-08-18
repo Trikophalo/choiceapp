@@ -43,8 +43,18 @@ function toCard(meal: RawMeal): Card {
   return {
     id: `mealdb:${meal.idMeal}`,
     title: meal.strMeal,
-    subtitle: truncate(meal.strInstructions, 110),
-    imageUrl: meal.strMealThumb ? `${meal.strMealThumb}/preview` : undefined,
+    // Ingredients tell you what the dish is; the first sentence of the method
+    // does not ("Bring a large pot of salted water to a boil…").
+    subtitle: ingredients.length
+      ? ingredients
+          .slice(0, 4)
+          .map((entry) => entry.replace(/^[\d\/.,\s]*(g|kg|ml|l|tbs|tbsp|tsp|cups?|oz|lb)?\s*/i, ''))
+          .filter(Boolean)
+          .join(' · ')
+      : truncate(meal.strInstructions, 110),
+    // Full-resolution thumbnail (~700px). The "/preview" variant is only
+    // ~250px and visibly soft once a card is drawn on a retina screen.
+    imageUrl: meal.strMealThumb ?? undefined,
     badge: meal.strArea ?? meal.strCategory ?? undefined,
     meta: {
       ...(meal.strCategory ? { category: meal.strCategory } : {}),

@@ -18,14 +18,15 @@
   },
   "home": {
     "greeting": "Worüber entscheiden wir?",
-    "pickCategory": "Kategorie wählen",
+    "pickCategory": "Worüber entscheiden wir?",
     "modeSolo": "Nur ich",
     "modeGroup": "Mit Freunden",
     "modeSoloHint": "Die erste Karte, die dir gefällt, gewinnt.",
     "modeGroupHint": "Alle swipen. Die erste Karte, die allen gefällt, gewinnt.",
     "start": "Los swipen",
     "createSession": "Gruppe erstellen",
-    "theme": "Darstellung"
+    "theme": "Darstellung",
+    "pickMode": "Wer entscheidet?"
   },
   "categories": {
     "restaurants": "Restaurants",
@@ -43,10 +44,6 @@
     "title": "Eingrenzen",
     "radius": "Suchradius",
     "radiusValue": "{{km}} km",
-    "minRating": "Mindestbewertung",
-    "anyRating": "Egal",
-    "ratingValue": "ab {{rating}} ★",
-    "ratingUnavailable": "Sternebewertungen brauchen die erweiterte Restaurantquelle, die nicht eingerichtet ist. Die Ergebnisse kommen von OpenStreetMap.",
     "useLocation": "Meinen Standort verwenden",
     "locating": "Standort wird ermittelt…",
     "locationDenied": "Standortfreigabe wurde abgelehnt. Suche stattdessen nach einer Stadt.",
@@ -71,7 +68,8 @@
     "errorTitle": "Etwas ist schiefgelaufen",
     "errorBody": "Die Quelle hat nicht geantwortet. Prüfe deine Verbindung und versuch es nochmal.",
     "noRestaurantsTitle": "Nichts in der Nähe",
-    "noRestaurantsBody": "Im Umkreis von {{km}} km gab es keine Treffer. Versuch einen größeren Radius."
+    "noRestaurantsBody": "Im Umkreis von {{km}} km gab es keine Treffer. Versuch einen größeren Radius.",
+    "stockBadge": "Symbolbild"
   },
   "result": {
     "soloTitle": "Deine Wahl",
@@ -129,9 +127,11 @@
     "youLabel": "du",
     "hostLabel": "Host",
     "swipedAll": "fertig",
-    "demoNoticeTitle": "Demo-Sync",
-    "demoNoticeBody": "Es ist kein Sync-Backend eingerichtet, deshalb funktionieren Gruppenrunden nur zwischen Tabs auf diesem Gerät — öffne einen zweiten Tab zum Mitspielen. Mit Firebase-Einstellungen klappt es geräteübergreifend.",
-    "backHome": "Zurück zum Start"
+    "demoNoticeTitle": "Dieser Link erreicht kein anderes Handy",
+    "demoNoticeBody": "Es ist kein Sync-Backend eingerichtet, deshalb funktioniert diese Runde nur zwischen Tabs in diesem Browser. Öffne einen zweiten Tab zum Ausprobieren. Damit Freunde auf ihren eigenen Handys mitspielen können, ergänze die Firebase-Einstellungen (siehe README).",
+    "backHome": "Zurück zum Start",
+    "noBackendTitle": "Gruppenrunden sind noch nicht eingerichtet",
+    "noBackendBody": "Dieser Link funktioniert nur in dem Browser, der ihn erstellt hat, weil kein Sync-Backend eingerichtet ist. Bitte den Host, Firebase-Einstellungen zu ergänzen — die README erklärt es in etwa drei Minuten."
   },
   "language": {
     "label": "Sprache",
@@ -151,8 +151,6 @@
     "phone": "Telefon",
     "website": "Website",
     "distanceM": "Entfernung",
-    "rating": "Bewertung",
-    "reviews": "Bewertungen",
     "priceLevel": "Preis",
     "summary": "Über",
     "glass": "Glas",
@@ -162,10 +160,17 @@
     "area": "Küche",
     "year": "Jahr",
     "overview": "Handlung",
-    "tags": "Gut für"
+    "tags": "Gut für",
+    "rated": "Freigabe"
   },
   "footer": {
     "attribution": "Filmdaten von TMDB. Drinks und Rezepte von TheCocktailDB und TheMealDB. Orte von OpenStreetMap-Mitwirkenden.",
     "tmdbDisclaimer": "Dieses Produkt nutzt die TMDB-API, wird aber nicht von TMDB unterstützt oder zertifiziert."
+  },
+  "details": {
+    "open": "Details zu {{title}}",
+    "hint": "Karte antippen für Details",
+    "backToSwiping": "Zurück zum Swipen",
+    "stockPhoto": "Symbolbild — nicht dieser konkrete Ort."
   }
 }

@@ -16,7 +16,10 @@ export interface Card {
   /** One-line description shown under the title. */
   subtitle?: string
   imageUrl?: string
-  /** Small chip on the card, e.g. "4.6 ★", "20 min". */
+  /** True when the image illustrates the category rather than showing this
+   *  exact place or event — surfaced on the card so it cannot mislead. */
+  imageIsStock?: boolean
+  /** Small chip on the card, e.g. "1.2 km", "20 min". */
   badge?: string
   /** Detail rows on the result screen. */
   meta?: Record<string, string>
@@ -40,8 +43,6 @@ export interface DeckOptions {
   location?: GeoPoint
   /** Restaurants: search radius in metres (max 10000). */
   radiusM?: number
-  /** Restaurants: minimum star rating; only honoured by rating-capable providers. */
-  minRating?: number
   signal?: AbortSignal
 }
 
@@ -85,7 +86,7 @@ export interface SessionMeta {
   createdAt: number
   startedAt: number | null
   locale: Locale
-  filters?: { radiusM?: number; minRating?: number }
+  filters?: { radiusM?: number }
 }
 
 export interface Winner {

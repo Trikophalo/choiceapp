@@ -4,7 +4,7 @@ export interface CreateSessionInput {
   sessionId: string
   category: CategoryId
   locale: Locale
-  filters?: { radiusM?: number; minRating?: number }
+  filters?: { radiusM?: number }
   host: { name: string; emoji: string }
 }
 

@@ -24,7 +24,9 @@ interface SwipeCardProps {
   onSwipe: (direction: SwipeDirection) => void
   /** Set to fire a programmatic swipe from buttons or the keyboard. */
   triggered?: SwipeDirection | null
-  labels: { like: string; nope: string }
+  labels: { like: string; nope: string; details: string; stock: string }
+  /** Opens the detail sheet. A tap must never count as a swipe. */
+  onOpenDetails?: () => void
 }
 
 export function SwipeCard({
@@ -34,6 +36,7 @@ export function SwipeCard({
   onSwipe,
   triggered,
   labels,
+  onOpenDetails,
 }: SwipeCardProps) {
   const x = useMotionValue(0)
   const controls = useAnimationControls()
@@ -70,7 +73,12 @@ export function SwipeCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggered, isTop])
 
+  const dragged = useRef(false)
+
   const handleDragEnd = (_: unknown, info: PanInfo) => {
+    // Remember that this gesture moved, so the click that follows is ignored.
+    dragged.current = Math.abs(info.offset.x) > 6 || Math.abs(info.offset.y) > 6
+
     const threshold = Math.max(80, window.innerWidth * COMMIT_RATIO * 0.6)
     const passedDistance = Math.abs(info.offset.x) > threshold
     const passedVelocity = Math.abs(info.velocity.x) > COMMIT_VELOCITY
@@ -109,6 +117,13 @@ export function SwipeCard({
         dragConstraints={{ left: 0, right: 0 }}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
+        onClick={() => {
+          if (dragged.current) {
+            dragged.current = false // Consume the click that ends a drag.
+            return
+          }
+          if (isTop) onOpenDetails?.()
+        }}
       >
       <article
         data-testid="card"
@@ -132,6 +147,31 @@ export function SwipeCard({
           <div className="absolute right-4 top-4 rounded-full bg-black/45 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md">
             {card.badge}
           </div>
+        )}
+
+        {isTop && onOpenDetails && (
+          <button
+            type="button"
+            aria-label={labels.details}
+            // Stop the press from starting a drag on the card underneath.
+            onPointerDownCapture={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenDetails()
+            }}
+            className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md transition hover:bg-black/65"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5M12 7.6v.2" />
+            </svg>
+          </button>
+        )}
+
+        {card.imageIsStock && (
+          <span className="absolute bottom-[6.5rem] right-4 rounded-full bg-black/45 px-2 py-1 text-[0.65rem] font-medium uppercase tracking-wide text-white/85 backdrop-blur-md">
+            {labels.stock}
+          </span>
         )}
 
         <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">

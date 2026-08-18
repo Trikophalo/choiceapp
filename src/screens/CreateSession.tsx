@@ -12,7 +12,7 @@ import { IdentityForm } from '@/components/IdentityForm'
 export function CreateSession() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { category, radiusM, minRating, displayName, emoji, setIdentity } = useAppStore()
+  const { category, radiusM, displayName, emoji, setIdentity } = useAppStore()
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(false)
   // React 18 StrictMode double-invokes effects; this keeps one session per host.
@@ -32,7 +32,6 @@ export function CreateSession() {
         locale: currentLocale(),
         filters: {
           ...(category === 'restaurants' ? { radiusM } : {}),
-          ...(minRating != null ? { minRating } : {}),
         },
         host: { name, emoji: chosenEmoji },
       })

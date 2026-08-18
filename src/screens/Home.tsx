@@ -43,25 +43,19 @@ export function Home() {
         </div>
       </header>
 
-      <div className="mt-4 mb-5">
-        <h1 className="text-[2rem] font-semibold leading-[1.15] tracking-tight sm:text-[2.4rem]">
+      <div className="mt-3 mb-4">
+        <h1 className="text-[1.85rem] font-semibold leading-[1.15] tracking-tight sm:text-[2.4rem]">
           {t('home.greeting')}
         </h1>
         <p className="mt-2 text-ink-muted">{t('app.tagline')}</p>
       </div>
 
-      <section aria-label={t('home.pickCategory')} className="grid grid-cols-2 gap-3">
-        {CATEGORY_ORDER.map((id) => (
-          <CategoryTile
-            key={id}
-            id={id}
-            selected={category === id}
-            onSelect={() => setCategory(id)}
-          />
-        ))}
-      </section>
-
-      <section className="mt-4">
+      {/* Step 1 — who is deciding. Chosen before the category, because it
+          changes what the round is (a private pick vs. a shared link). */}
+      <section aria-labelledby="step-mode">
+        <h2 id="step-mode" className="mb-1.5 text-sm font-medium uppercase tracking-wider text-ink-faint">
+          {t('home.pickMode')}
+        </h2>
         <div className="grid grid-cols-2 gap-3">
           <ModeTile
             label={t('home.modeSolo')}
@@ -80,7 +74,24 @@ export function Home() {
         </div>
       </section>
 
-      <div className="mt-auto flex flex-col gap-3 pb-3 pt-5">
+      {/* Step 2 — what to decide about. */}
+      <section aria-labelledby="step-category" className="mt-4">
+        <h2 id="step-category" className="mb-1.5 text-sm font-medium uppercase tracking-wider text-ink-faint">
+          {t('home.pickCategory')}
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          {CATEGORY_ORDER.map((id) => (
+            <CategoryTile
+              key={id}
+              id={id}
+              selected={category === id}
+              onSelect={() => setCategory(id)}
+            />
+          ))}
+        </div>
+      </section>
+
+      <div className="mt-auto flex flex-col gap-2.5 pb-2 pt-4">
         <Button onClick={start} full>
           {mode === 'solo' ? t('home.start') : t('home.createSession')}
         </Button>
@@ -117,7 +128,7 @@ function CategoryTile({
       <div className="mt-2 font-semibold tracking-tight">
         {t(`categories.${id}`)}
       </div>
-      <div className="mt-0.5 line-clamp-2 min-h-[2.1rem] text-[0.8rem] leading-snug text-ink-muted">
+      <div className="mt-0.5 line-clamp-2 min-h-[1.9rem] text-[0.8rem] leading-snug text-ink-muted">
         {t(`categories.${id}Hint`)}
       </div>
       {selected && (
@@ -157,7 +168,7 @@ function ModeTile({
     >
       <div className="text-2xl" aria-hidden="true">{emoji}</div>
       <div className="mt-2 font-semibold tracking-tight">{label}</div>
-      <div className="mt-0.5 line-clamp-2 min-h-[2.1rem] text-[0.8rem] leading-snug text-ink-muted">
+      <div className="mt-0.5 line-clamp-2 min-h-[1.9rem] text-[0.8rem] leading-snug text-ink-muted">
         {hint}
       </div>
     </button>

@@ -15,7 +15,7 @@ const DECK_SIZE = 25
 export function SoloSwipe() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { category, radiusM, minRating, location } = useAppStore()
+  const { category, radiusM, location } = useAppStore()
   const { begin, like, pass, deck, index, winner, exhausted, reset } = useSoloStore()
 
   // A fresh seed per mount means "go again" deals a genuinely different deck.
@@ -27,7 +27,6 @@ export function SoloSwipe() {
     seed,
     location: location ?? undefined,
     radiusM,
-    minRating: minRating ?? undefined,
   })
 
   useEffect(() => {

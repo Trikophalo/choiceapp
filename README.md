@@ -55,11 +55,16 @@ docs/            architecture, API evaluation, risks
 
 Every variable is optional. Copy `.env.example` to `.env` to set any of them locally; in CI they come from repository secrets (Settings → Secrets and variables → Actions).
 
-| Variable | Without it | With it |
-|---|---|---|
-| `VITE_TMDB_KEY` | Movies serve a bundled offline snapshot | Live, fully localised TMDB catalogue (German titles and synopses) |
-| `VITE_GOOGLE_PLACES_KEY` | Restaurants come from OpenStreetMap: free, keyless, no ratings | Star-rating filter and real photos |
-| `VITE_FIREBASE_*` | Group rounds sync between tabs on one device | Group rounds sync across phones |
+| Variable | Without it | With it | Guide |
+|---|---|---|---|
+| `VITE_FIREBASE_*` | Group links only work in the browser that created them | **Shared links work across phones** | [Setup](docs/SETUP-FIREBASE.md) |
+| `VITE_GOOGLE_PLACES_KEY` | Restaurants come from OpenStreetMap — free and keyless, but no photos | **Real Google photo of each restaurant** | [Setup](docs/SETUP-RESTAURANT-PHOTOS.md) |
+| `VITE_TMDB_KEY` | Movies come from the keyless iTunes Search API, with posters | The larger, fully localised TMDB catalogue |  |
+
+If someone opens a shared link on another phone and sees *"Group rounds are not set
+up yet"*, that is this table's first row: the app is running without a sync backend.
+Follow the [Firebase guide](docs/SETUP-FIREBASE.md) — it takes about three minutes
+and needs no credit card.
 
 Cocktails, recipes and activities need no configuration at all.
 
@@ -75,13 +80,17 @@ Cocktails, recipes and activities need no configuration at all.
 
 | Category | Source | Notes |
 |---|---|---|
-| Restaurants | OpenStreetMap Overpass, optionally Google Places (New) | Radius up to 10 km; rating filter only in enhanced mode, and the UI says so rather than showing a dead control |
+| Restaurants | OpenStreetMap Overpass, optionally Google Places (New) | Radius up to 10 km, cards labelled with distance. Star ratings are deliberately never shown — the decision should come from the swipe. Google photos need a key |
 | Cocktails | TheCocktailDB | German instructions where available; offline snapshot as fallback |
 | Recipes | TheMealDB | English content; offline snapshot as fallback |
-| Movies | TMDB | Fully localised; offline snapshot when no key is set |
-| Activities | Bundled bilingual dataset (51 entries) | The Bored API shut down in 2024, so this is curated rather than fetched — no rate limits, no CORS, no shutdown risk |
+| Movies | iTunes Search (keyless), TMDB when a key is set | **Real posters with no key required.** iTunes needs no account and is localised per storefront; TMDB takes over when configured |
+| Activities | Bundled bilingual dataset (51 entries) + Wikimedia Commons photos | The Bored API shut down in 2024, so the text is curated. Photos come from Commons via a curated per-entry search term — keyless |
 
 Each provider is one file behind a common interface, so replacing a dead source is a contained change. Every network-backed category degrades to a usable state rather than an error screen.
+
+**Images.** Every category shows real photography without any API key: recipes and cocktails at full resolution from their own APIs, movie posters from iTunes Search, and activities from Wikimedia Commons. Where an image only illustrates the category rather than the specific place — Commons photos for OpenStreetMap restaurants, for instance — the card says so rather than implying it is that venue. Photo lookups are bounded by a time budget, so a slow source costs a gradient tile, never a delayed deck.
+
+**Details before deciding.** Tapping a card (or the ⓘ button) opens the full detail sheet — a film's synopsis, a dish's ingredients and method, a restaurant's address. Opening and closing it never counts as a swipe.
 
 Location comes from the browser Geolocation API, with keyless [Photon](https://photon.komoot.io) city search as the fallback when permission is denied.
 
@@ -89,4 +98,8 @@ Location comes from the browser Geolocation API, with keyless [Photon](https://p
 
 Movie data from [TMDB](https://www.themoviedb.org) — this product uses the TMDB API but is not endorsed or certified by TMDB. Drinks from [TheCocktailDB](https://www.thecocktaildb.com), recipes from [TheMealDB](https://www.themealdb.com), places from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full technical plan, API evaluation, data model and risk register.
+## Docs
+
+- [`docs/SETUP-FIREBASE.md`](docs/SETUP-FIREBASE.md) — make group links work across devices (DE + EN)
+- [`docs/SETUP-RESTAURANT-PHOTOS.md`](docs/SETUP-RESTAURANT-PHOTOS.md) — enable Google restaurant photos (DE + EN)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — full technical plan, API evaluation, data model and risk register

@@ -14,8 +14,6 @@ interface AppState {
   /** Restaurant search settings — persisted so a repeat round skips setup. */
   radiusM: number
   setRadiusM: (radiusM: number) => void
-  minRating: number | null
-  setMinRating: (minRating: number | null) => void
   location: GeoPoint | null
   locationLabel: string | null
   setLocation: (location: GeoPoint | null, label?: string | null) => void
@@ -50,8 +48,6 @@ export const useAppStore = create<AppState>()(
 
       radiusM: 3000,
       setRadiusM: (radiusM) => set({ radiusM }),
-      minRating: null,
-      setMinRating: (minRating) => set({ minRating }),
       location: null,
       locationLabel: null,
       setLocation: (location, label = null) =>
@@ -65,8 +61,8 @@ export const useAppStore = create<AppState>()(
       name: 'swipedecide.app',
       // Never persist coordinates: they are used transiently for the API call
       // and rebuilt on demand.
-      partialize: ({ theme, category, radiusM, minRating, displayName, emoji }) => ({
-        theme, category, radiusM, minRating, displayName, emoji,
+      partialize: ({ theme, category, radiusM, displayName, emoji }) => ({
+        theme, category, radiusM, displayName, emoji,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) applyTheme(state.theme)

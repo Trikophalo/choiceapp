@@ -41,9 +41,9 @@ function toCard(drink: RawDrink, locale: string): Card {
     subtitle: ingredients.length
       ? ingredients.slice(0, 4).join(' · ')
       : truncate(instructions, 110),
-    imageUrl: drink.strDrinkThumb
-      ? `${drink.strDrinkThumb}/preview`
-      : undefined,
+    // Full-resolution image (~700px); "/preview" is only ~250px and looks
+    // blurry once upscaled onto a card.
+    imageUrl: drink.strDrinkThumb ?? undefined,
     badge: drink.strAlcoholic ?? undefined,
     meta: {
       ...(drink.strGlass ? { glass: drink.strGlass } : {}),

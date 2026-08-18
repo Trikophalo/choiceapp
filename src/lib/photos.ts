@@ -1,0 +1,98 @@
+import { fetchJson } from './http'
+
+/**
+ * Keyless photo lookup via the Wikimedia Commons API.
+ *
+ * Commons is free, needs no account, allows browser calls (`origin=*`) and is
+ * generous about rate limits — which makes it the only realistic way to put
+ * real photographs on cards whose own source has none (activities, and
+ * restaurants when no Google key is configured).
+ *
+ * Results are cached per query for the session: a deck reuses the same cuisine
+ * or theme repeatedly, and Commons should not be asked twice for it.
+ */
+
+const ENDPOINT = 'https://commons.wikimedia.org/w/api.php'
+const cache = new Map<string, string | null>()
+
+interface CommonsResponse {
+  query?: {
+    pages?: Record<
+      string,
+      { imageinfo?: Array<{ thumburl?: string; url?: string }> }
+    >
+  }
+}
+
+/** Requests a thumbnail at `width`, so Commons resizes server-side rather than
+ *  us shipping a 4000px original to a phone. */
+export async function findPhoto(
+  query: string,
+  width = 800,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const key = `${query}@${width}`
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached
+
+  const params = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    origin: '*', // CORS for anonymous browser requests.
+    generator: 'search',
+    gsrsearch: `filetype:bitmap ${query}`,
+    gsrnamespace: '6', // File: namespace only.
+    gsrlimit: '4',
+    prop: 'imageinfo',
+    iiprop: 'url',
+    iiurlwidth: String(width),
+  })
+
+  try {
+    const res = await fetchJson<CommonsResponse>(`${ENDPOINT}?${params}`, {
+      signal,
+      retries: 0,
+      timeoutMs: 5000,
+    })
+    const pages = Object.values(res.query?.pages ?? {})
+    const url =
+      pages
+        .map((page) => page.imageinfo?.[0]?.thumburl ?? page.imageinfo?.[0]?.url)
+        .find(
+          (candidate): candidate is string =>
+            typeof candidate === 'string' &&
+            candidate.startsWith('https://') &&
+            // Skip vector/animated assets that render poorly as a card photo.
+            !/\.(svg|gif)$/i.test(candidate),
+        ) ?? null
+
+    cache.set(key, url)
+    return url
+  } catch {
+    cache.set(key, null) // Remember the miss; do not retry all deck long.
+    return null
+  }
+}
+
+/**
+ * Resolves photos for several queries at once, tolerating individual misses.
+ *
+ * Photos are an enhancement, never a gate: the whole lookup is bounded by
+ * `budgetMs`, so a slow or unreachable Commons costs a short wait and a set of
+ * gradient tiles rather than holding the deck — and the round — hostage.
+ */
+export async function findPhotos(
+  queries: readonly string[],
+  width = 800,
+  signal?: AbortSignal,
+  budgetMs = 4000,
+): Promise<Array<string | null>> {
+  const empty = queries.map(() => null)
+  const lookup = Promise.all(
+    queries.map((query) => findPhoto(query, width, signal)),
+  )
+  const budget = new Promise<Array<string | null>>((resolve) =>
+    setTimeout(() => resolve(empty), budgetMs),
+  )
+  return Promise.race([lookup, budget])
+}

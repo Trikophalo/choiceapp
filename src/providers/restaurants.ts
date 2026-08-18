@@ -1,17 +1,19 @@
-import type { Card, DeckProvider, DeckOptions } from '@/types'
+import type { Card, DeckProvider, DeckOptions, GeoPoint } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
+import { findPhotos } from '@/lib/photos'
 
 /**
  * Restaurants run a dual-provider strategy:
  *
  *  - OpenStreetMap Overpass (default): keyless, free, CORS-enabled, works for
- *    everyone with zero setup — but OSM carries no ratings and rarely photos.
- *  - Google Places (New) (optional): unlocks the star-rating filter and real
- *    photos. Enabled only when a referrer-restricted key is configured at
- *    build time, so the free path never depends on a billing account.
+ *    everyone with zero setup — but OSM almost never carries photos.
+ *  - Google Places (New) (optional): supplies a real photo of each restaurant.
+ *    Enabled only when a referrer-restricted key is configured at build time,
+ *    so the free path never depends on a billing account.
  *
- * The UI hides the rating filter in OSM mode rather than pretending it works.
+ * Star ratings are deliberately not shown anywhere: the decision should come
+ * from the swipe, not from a score. Cards are labelled with distance instead.
  */
 
 const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY ?? ''
@@ -56,7 +58,7 @@ function prettyCuisine(raw: string | undefined): string | undefined {
   )
 }
 
-function distanceM(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+function distanceM(a: GeoPoint, b: GeoPoint): number {
   const R = 6371000
   const dLat = ((b.lat - a.lat) * Math.PI) / 180
   const dLng = ((b.lng - a.lng) * Math.PI) / 180
@@ -68,10 +70,12 @@ function distanceM(a: { lat: number; lng: number }, b: { lat: number; lng: numbe
   return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-function osmToCard(
-  element: OverpassElement,
-  origin: { lat: number; lng: number },
-): Card | null {
+function formatDistance(meters: number | null): string | undefined {
+  if (meters == null) return undefined
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`
+}
+
+function osmToCard(element: OverpassElement, origin: GeoPoint): Card | null {
   const tags = element.tags ?? {}
   const name = tags.name
   if (!name) return null // Unnamed nodes make useless cards.
@@ -100,11 +104,7 @@ function osmToCard(
     title: name,
     subtitle: descriptionParts.join(' · ') || undefined,
     imageUrl: tags.image?.startsWith('https://') ? tags.image : undefined,
-    badge: meters != null
-      ? meters >= 1000
-        ? `${(meters / 1000).toFixed(1)} km`
-        : `${meters} m`
-      : cuisine,
+    badge: formatDistance(meters) ?? cuisine,
     meta: {
       ...(cuisine ? { cuisine } : {}),
       ...(street ? { address: street } : {}),
@@ -144,8 +144,31 @@ out center 120;`
       const cards = (res.elements ?? [])
         .map((el) => osmToCard(el, location))
         .filter((card): card is Card => card !== null)
-      if (cards.length) return seededShuffle(cards, seed).slice(0, size)
-      return []
+      if (!cards.length) return []
+
+      const deck = seededShuffle(cards, seed).slice(0, size)
+
+      // OSM has no photos. Rather than a wall of blank tiles, fill in a
+      // cuisine-typical photograph — flagged as illustrative on the card, so
+      // nobody mistakes it for a picture of that particular restaurant.
+      const needsPhoto = deck.filter((card) => !card.imageUrl)
+      if (needsPhoto.length) {
+        const photos = await findPhotos(
+          needsPhoto.map(
+            (card) => `${card.meta?.cuisine ?? 'restaurant'} food restaurant`,
+          ),
+          800,
+          signal,
+        )
+        needsPhoto.forEach((card, index) => {
+          if (photos[index]) {
+            card.imageUrl = photos[index] ?? undefined
+            card.imageIsStock = true
+          }
+        })
+      }
+
+      return deck
     } catch (err) {
       if (signal?.aborted) throw err
       lastError = err // Try the next mirror.
@@ -161,8 +184,6 @@ interface GooglePlace {
   displayName?: { text: string }
   formattedAddress?: string
   shortFormattedAddress?: string
-  rating?: number
-  userRatingCount?: number
   priceLevel?: string
   editorialSummary?: { text: string }
   primaryTypeDisplayName?: { text: string }
@@ -170,8 +191,13 @@ interface GooglePlace {
   location?: { latitude: number; longitude: number }
 }
 
-function googleToCard(place: GooglePlace): Card {
+function googleToCard(place: GooglePlace, origin: GeoPoint): Card {
   const photo = place.photos?.[0]?.name
+  const point = place.location
+    ? { lat: place.location.latitude, lng: place.location.longitude }
+    : null
+  const meters = point ? Math.round(distanceM(origin, point)) : null
+
   return {
     id: `gplaces:${place.id}`,
     title: place.displayName?.text ?? 'Restaurant',
@@ -181,17 +207,16 @@ function googleToCard(place: GooglePlace): Card {
         .filter(Boolean)
         .join(' · ') ||
         undefined),
+    // The actual Google photo of the place. maxWidthPx keeps portrait shots
+    // from being cropped to a letterbox on the card.
     imageUrl: photo
-      ? `https://places.googleapis.com/v1/${photo}/media?maxHeightPx=800&key=${GOOGLE_KEY}`
+      ? `https://places.googleapis.com/v1/${photo}/media?maxHeightPx=1000&maxWidthPx=800&key=${GOOGLE_KEY}`
       : undefined,
-    badge: place.rating ? `${place.rating.toFixed(1)} ★` : undefined,
+    badge: formatDistance(meters) ?? place.primaryTypeDisplayName?.text,
     meta: {
-      ...(place.rating ? { rating: place.rating.toFixed(1) } : {}),
-      ...(place.userRatingCount
-        ? { reviews: String(place.userRatingCount) }
-        : {}),
       ...(place.priceLevel ? { priceLevel: place.priceLevel } : {}),
       ...(place.formattedAddress ? { address: place.formattedAddress } : {}),
+      ...(meters != null ? { distanceM: String(meters) } : {}),
       ...(place.editorialSummary?.text
         ? { summary: truncate(place.editorialSummary.text, 400) }
         : {}),
@@ -204,7 +229,7 @@ function googleToCard(place: GooglePlace): Card {
 }
 
 async function fetchFromGoogle(opts: DeckOptions): Promise<Card[]> {
-  const { location, radiusM = 3000, minRating, size, seed, locale, signal } = opts
+  const { location, radiusM = 3000, size, seed, locale, signal } = opts
   if (!location) throw new Error('location-required')
 
   const res = await fetchJson<{ places?: GooglePlace[] }>(
@@ -219,8 +244,6 @@ async function fetchFromGoogle(opts: DeckOptions): Promise<Card[]> {
           'places.displayName',
           'places.formattedAddress',
           'places.shortFormattedAddress',
-          'places.rating',
-          'places.userRatingCount',
           'places.priceLevel',
           'places.editorialSummary',
           'places.primaryTypeDisplayName',
@@ -245,21 +268,18 @@ async function fetchFromGoogle(opts: DeckOptions): Promise<Card[]> {
     },
   )
 
-  const places = (res.places ?? []).filter(
-    (place) => !minRating || (place.rating ?? 0) >= minRating,
-  )
-  return seededShuffle(places.map(googleToCard), seed).slice(0, size)
+  const places = res.places ?? []
+  return seededShuffle(
+    places.map((place) => googleToCard(place, location)),
+    seed,
+  ).slice(0, size)
 }
 
 /* ---------------- Public provider ---------------- */
 
 export const restaurantsProvider: DeckProvider = {
   id: 'restaurants',
-  capabilities: {
-    needsLocation: true,
-    // Only Google carries ratings; OSM has none, so the filter chip is hidden.
-    supportsRatingFilter: hasGooglePlaces(),
-  },
+  capabilities: { needsLocation: true, supportsRatingFilter: false },
 
   async fetchDeck(opts: DeckOptions): Promise<Card[]> {
     if (hasGooglePlaces()) {

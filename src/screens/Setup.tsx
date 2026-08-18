@@ -3,11 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
 import { getCurrentPosition, searchPlaces, GeoError, type PlaceSuggestion } from '@/lib/geo'
-import { getProvider } from '@/providers'
 import { BackLink, Button, Screen } from '@/components/ui'
 import { currentLocale } from '@/i18n'
-
-const RATING_CHOICES = [null, 3.5, 4.0, 4.5] as const
 
 /** Location and filter setup — only reached for location-dependent categories. */
 export function Setup() {
@@ -16,8 +13,7 @@ export function Setup() {
   const [params] = useSearchParams()
   const mode = params.get('mode') === 'group' ? 'group' : 'solo'
 
-  const { radiusM, setRadiusM, minRating, setMinRating, location, locationLabel, setLocation } =
-    useAppStore()
+  const { radiusM, setRadiusM, location, locationLabel, setLocation } = useAppStore()
 
   const [locating, setLocating] = useState(false)
   const [geoError, setGeoError] = useState<'denied' | 'unavailable' | null>(null)
@@ -25,8 +21,6 @@ export function Setup() {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
   const [searching, setSearching] = useState(false)
   const searchAbort = useRef<AbortController | null>(null)
-
-  const supportsRating = getProvider('restaurants').capabilities.supportsRatingFilter
 
   const useMyLocation = async () => {
     setLocating(true)
@@ -97,36 +91,6 @@ export function Setup() {
           onChange={(e) => setRadiusM(Number(e.target.value))}
           className="mt-3 w-full accent-[var(--accent)]"
         />
-      </section>
-
-      <section className="mt-4 rounded-3xl bg-surface p-5 shadow-soft ring-1 ring-line">
-        <div className="font-medium">{t('filters.minRating')}</div>
-        {supportsRating ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {RATING_CHOICES.map((rating) => (
-              <button
-                key={String(rating)}
-                type="button"
-                onClick={() => setMinRating(rating)}
-                aria-pressed={minRating === rating}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  minRating === rating
-                    ? 'bg-gradient-sunset text-white shadow-soft'
-                    : 'bg-surface-sunk text-ink-muted hover:text-ink'
-                }`}
-              >
-                {rating === null
-                  ? t('filters.anyRating')
-                  : t('filters.ratingValue', { rating: rating.toFixed(1) })}
-              </button>
-            ))}
-          </div>
-        ) : (
-          // Honest about the OSM limitation rather than showing a dead control.
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            {t('filters.ratingUnavailable')}
-          </p>
-        )}
       </section>
 
       <section className="mt-4 rounded-3xl bg-surface p-5 shadow-soft ring-1 ring-line">

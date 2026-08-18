@@ -34,7 +34,7 @@ export function GroupSession() {
   const navigate = useNavigate()
   const sync = useMemo(() => getSync(), [])
   const { session, uid, loading } = useSession(sessionId)
-  const { displayName, emoji, setIdentity, radiusM, minRating, location } = useAppStore()
+  const { displayName, emoji, setIdentity, radiusM, location } = useAppStore()
 
   const [joining, setJoining] = useState(false)
   const [localIndex, setLocalIndex] = useState(0)
@@ -56,7 +56,6 @@ export function GroupSession() {
       seed: sessionId ?? 'seed',
       location: location ?? undefined,
       radiusM: session?.meta.filters?.radiusM ?? radiusM,
-      minRating: session?.meta.filters?.minRating ?? minRating ?? undefined,
     },
     shouldFetchDeck,
   )
@@ -121,12 +120,16 @@ export function GroupSession() {
   }
 
   if (!session) {
+    // Without a sync backend a session lives only in the browser that created
+    // it, so a guest on another device finds nothing. Say that plainly instead
+    // of blaming the link, which is the one thing that is not wrong.
+    const noBackend = !sync.isCrossDevice
     return (
       <Screen>
         <EmptyState
-          emoji="🔍"
-          title={t('group.notFoundTitle')}
-          body={t('group.notFoundBody')}
+          emoji={noBackend ? '📵' : '🔍'}
+          title={t(noBackend ? 'group.noBackendTitle' : 'group.notFoundTitle')}
+          body={t(noBackend ? 'group.noBackendBody' : 'group.notFoundBody')}
           action={<Button onClick={() => navigate('/')}>{t('group.backHome')}</Button>}
         />
       </Screen>
@@ -344,10 +347,13 @@ function Lobby({
       <p className="mt-2 text-ink-muted">{t('group.lobbyBody')}</p>
 
       {!sync.isCrossDevice && (
-        // Honest about the demo adapter rather than letting someone send this
-        // link to a friend and watch it silently fail.
-        <div className="mt-5 rounded-2xl bg-surface-sunk p-4 ring-1 ring-line">
-          <p className="text-sm font-semibold">{t('group.demoNoticeTitle')}</p>
+        // Warn before the link is sent, not after a friend hits a dead end.
+        // Styled as a warning rather than a note because sharing this link with
+        // someone on another phone simply will not work.
+        <div className="mt-5 rounded-2xl border-l-4 border-nope bg-surface-sunk p-4">
+          <p className="text-sm font-semibold text-nope">
+            ⚠️ {t('group.demoNoticeTitle')}
+          </p>
           <p className="mt-1 text-sm leading-relaxed text-ink-muted">
             {t('group.demoNoticeBody')}
           </p>
