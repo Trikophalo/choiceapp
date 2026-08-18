@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+/* Manual theme override wins over the system preference; without a
+   data-theme attribute we follow prefers-color-scheme. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------- Design tokens ----------
+   "Editorial minimalism": warm off-white paper, ink text, and one ownable
+   signature — a coral→amber sunset gradient. Deliberately not Tinder red. */
+:root {
+  --bg: #fbf9f7;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-sunk: #f3efec;
+  --ink: #14100e;
+  --ink-muted: #7a716b;
+  --ink-faint: #a89f98;
+  --line: #e8e1db;
+  --accent: #ff6b5a;
+  --accent-2: #ffa83d;
+  --accent-ink: #ffffff;
+  --like: #16a06a;
+  --nope: #e5484d;
+  --shadow-card: 0 1px 2px rgb(20 16 14 / 0.04), 0 12px 32px -8px rgb(20 16 14 / 0.14), 0 32px 64px -24px rgb(20 16 14 / 0.16);
+  --shadow-soft: 0 1px 2px rgb(20 16 14 / 0.04), 0 6px 16px -6px rgb(20 16 14 / 0.12);
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    --bg: #0f0d0c;
+    --bg-elevated: #1a1614;
+    --surface: #1a1614;
+    --surface-sunk: #100e0d;
+    --ink: #f5f1ee;
+    --ink-muted: #9c918a;
+    --ink-faint: #6d635d;
+    --line: #2b2521;
+    --accent: #ff7a68;
+    --accent-2: #ffb454;
+    --accent-ink: #1a0f0c;
+    --like: #3dd598;
+    --nope: #ff6369;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.55), 0 32px 64px -24px rgb(0 0 0 / 0.6);
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -6px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0f0d0c;
+  --bg-elevated: #1a1614;
+  --surface: #1a1614;
+  --surface-sunk: #100e0d;
+  --ink: #f5f1ee;
+  --ink-muted: #9c918a;
+  --ink-faint: #6d635d;
+  --line: #2b2521;
+  --accent: #ff7a68;
+  --accent-2: #ffb454;
+  --accent-ink: #1a0f0c;
+  --like: #3dd598;
+  --nope: #ff6369;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.55), 0 32px 64px -24px rgb(0 0 0 / 0.6);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -6px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-ink: var(--accent-ink);
+  --color-like: var(--like);
+  --color-nope: var(--nope);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-soft: var(--shadow-soft);
+
+  --radius-card: 1.75rem;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background-color: var(--bg);
+    /* Prevent iOS text-size adjustment on rotate. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    /* Wide content (long links, tables) must scroll inside its own container,
+       never push the page sideways. */
+    overflow-x: hidden;
+    min-height: 100dvh;
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background-image: linear-gradient(105deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gradient-sunset {
+    background-image: linear-gradient(105deg, var(--accent), var(--accent-2));
+  }
+
+  /* Card media area: keeps the drag gesture from scrolling the page. */
+  .touch-card {
+    touch-action: pan-y;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

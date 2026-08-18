@@ -1,0 +1,48 @@
+/**
+ * Offline snapshot used when TMDB is unreachable or no API key is configured
+ * (for example on a fork without repository secrets). Poster paths are opaque
+ * TMDB hashes that cannot be derived offline, so these cards fall back to the
+ * gradient placeholder instead of a broken image.
+ */
+export const FALLBACK_MOVIES = [
+  { id: 603, title: 'The Matrix', poster_path: null, release_date: '1999-03-30', vote_average: 8.2,
+    overview: 'A computer hacker learns that the world he lives in is an elaborate simulation and joins a rebellion against the machines that built it.' },
+  { id: 680, title: 'Pulp Fiction', poster_path: null, release_date: '1994-09-10', vote_average: 8.5,
+    overview: 'The lives of two hitmen, a boxer and a pair of diner bandits intertwine in four tales of violence and redemption.' },
+  { id: 27205, title: 'Inception', poster_path: null, release_date: '2010-07-15', vote_average: 8.4,
+    overview: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea in a target’s mind.' },
+  { id: 157336, title: 'Interstellar', poster_path: null, release_date: '2014-11-05', vote_average: 8.4,
+    overview: 'A team of explorers travels through a wormhole in space in an attempt to ensure humanity’s survival.' },
+  { id: 155, title: 'The Dark Knight', poster_path: null, release_date: '2008-07-16', vote_average: 8.5,
+    overview: 'Batman raises the stakes in his war on crime as a criminal mastermind known as the Joker throws Gotham into anarchy.' },
+  { id: 13, title: 'Forrest Gump', poster_path: null, release_date: '1994-06-23', vote_average: 8.5,
+    overview: 'The presidencies of Kennedy and Johnson, Vietnam and Watergate unfold through the perspective of an Alabama man with a big heart.' },
+  { id: 129, title: 'Spirited Away', poster_path: null, release_date: '2001-07-20', vote_average: 8.5,
+    overview: 'A young girl wanders into a world of spirits and must find a way to free herself and her parents.' },
+  { id: 550, title: 'Fight Club', poster_path: null, release_date: '1999-10-15', vote_average: 8.4,
+    overview: 'An insomniac office worker and a soap salesman form an underground fight club that evolves into something far bigger.' },
+  { id: 278, title: 'The Shawshank Redemption', poster_path: null, release_date: '1994-09-23', vote_average: 8.7,
+    overview: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.' },
+  { id: 496243, title: 'Parasite', poster_path: null, release_date: '2019-05-30', vote_average: 8.5,
+    overview: 'A poor family schemes to become employed by a wealthy household by infiltrating it and posing as unrelated, highly qualified individuals.' },
+  { id: 372058, title: 'Your Name.', poster_path: null, release_date: '2016-08-26', vote_average: 8.5,
+    overview: 'Two teenagers discover they are inexplicably swapping bodies, and set out to find each other across time and distance.' },
+  { id: 12477, title: 'Grave of the Fireflies', poster_path: null, release_date: '1988-04-16', vote_average: 8.5,
+    overview: 'A young boy and his little sister struggle to survive in Japan during the final months of the Second World War.' },
+  { id: 244786, title: 'Whiplash', poster_path: null, release_date: '2014-10-10', vote_average: 8.4,
+    overview: 'A promising young drummer enrols at a cut-throat music conservatory where his dreams are driven by an abusive instructor.' },
+  { id: 122, title: 'The Lord of the Rings: The Return of the King', poster_path: null, release_date: '2003-12-01', vote_average: 8.5,
+    overview: 'Gandalf and Aragorn lead the World of Men against Sauron’s army to draw his gaze from Frodo and Sam.' },
+  { id: 769, title: 'GoodFellas', poster_path: null, release_date: '1990-09-12', vote_average: 8.5,
+    overview: 'The story of Henry Hill and his life in the mafia, covering his relationship with his wife and his partners in crime.' },
+  { id: 238, title: 'The Godfather', poster_path: null, release_date: '1972-03-14', vote_average: 8.7,
+    overview: 'An organised crime dynasty’s ageing patriarch transfers control of his clandestine empire to his reluctant son.' },
+  { id: 429, title: 'The Good, the Bad and the Ugly', poster_path: null, release_date: '1966-12-23', vote_average: 8.5,
+    overview: 'Three gunslingers compete to find a fortune in buried Confederate gold amid the violence of the American Civil War.' },
+  { id: 274, title: 'The Silence of the Lambs', poster_path: null, release_date: '1991-02-01', vote_average: 8.3,
+    overview: 'A young FBI cadet must confide in an incarcerated killer to catch another serial murderer.' },
+  { id: 807, title: 'Se7en', poster_path: null, release_date: '1995-09-22', vote_average: 8.4,
+    overview: 'Two detectives hunt a serial killer who uses the seven deadly sins as his motives.' },
+  { id: 640, title: 'Catch Me If You Can', poster_path: null, release_date: '2002-12-25', vote_average: 8.0,
+    overview: 'A seasoned FBI agent pursues a brilliant con man who successfully passed himself off as a pilot, a doctor and a lawyer.' },
+]

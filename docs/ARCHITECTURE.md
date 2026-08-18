@@ -3,6 +3,11 @@
 *Architecture, tech stack, API selection, data model, sync design, MVP scope, and risk register.*
 *Last updated: 2026-08-18. Pricing/limit figures reflect early-2026 research — re-verify each provider's terms before launch.*
 
+> **Status: implemented.** This plan has been built. All five categories, solo
+> and group modes, DE/EN, and the Pages pipeline are in the repository — see
+> [§12 What was built](#12-what-was-built) for how the shipped code differs
+> from the plan below, and the [README](../README.md) to run it.
+
 ---
 
 ## Table of contents
@@ -67,7 +72,7 @@ Edge-case rulings (documented up front so implementation and tests agree):
 | Group state | **Firebase Realtime Database (RTDB) + Anonymous Auth** — region `europe-west1` | The session document in RTDB *is* the shared state; clients subscribe with `onValue` and write swipes directly. Rationale in §5.1. |
 | Routing | **react-router in Hash mode** (`/#/s/abc123`) | GitHub Pages can't rewrite URLs to `index.html`; hash routing makes shared session links work with zero 404 hacks and survives Pages' project-path prefix. |
 | i18n | **react-i18next** with JSON files (`src/locales/{en,de}.json`) | Industry standard, lazy namespaces, interpolation/plurals, detection via `navigator.language` with a persisted manual toggle. |
-| Data fetching | **TanStack Query** (light usage) | Caching, retry/backoff, and deduping for the content APIs — pays for itself on Overpass retries alone. |
+| Data fetching | **TanStack Query** (light usage) | Caching, retry/backoff, and deduping for the content APIs — pays for itself on Overpass retries alone. *(Not used in the end — see §12: a ~60-line `fetchJson` with timeout/retry plus a `useDeck` hook covered the need without the dependency.)* |
 | Testing | **Vitest + React Testing Library**; Playwright for one smoke E2E (swipe → match) | Deck providers and match logic are pure functions → cheap unit coverage where correctness matters most. |
 | CI/CD | **GitHub Actions → `actions/deploy-pages`** | Official Pages flow; build-time injection of `VITE_*` env vars from repo secrets (see §8). |
 | PWA (polish) | `vite-plugin-pwa` | Installable to home screen, offline app shell. Not MVP-blocking. |
@@ -458,7 +463,7 @@ Responsive: mobile-first (stack fills viewport width minus 24 px gutters, max-wi
 
 ## 7. Localization (DE/EN)
 
-- **All UI strings in JSON from commit #1** (`src/locales/en.json`, `de.json`) — retrofitting i18n is the expensive path. Keys namespaced by screen (`home.title`, `group.lobby.copyLink`…). ICU-style plurals via i18next.
+- **All UI strings in JSON from commit #1** (`src/i18n/locales/en.json`, `de.json`) — retrofitting i18n is the expensive path. Keys namespaced by screen (`home.title`, `group.lobby.copyLink`…). ICU-style plurals via i18next.
 - Detection: `navigator.language` → default; manual toggle persisted in `localStorage`; `<html lang>` kept in sync.
 - **Content** localization per source: TMDB fully localized via `language=de-DE` (deck fetched in the session's `locale`); TheCocktailDB uses `strInstructionsDE` when present, EN fallback; TheMealDB EN-only (food names travel fine; category labels translated via a small static map); OSM names are inherently local; the bundled activities dataset is authored bilingually.
 - Numbers/units via `Intl.NumberFormat` (km radius, ratings).
@@ -543,4 +548,68 @@ Definition of done for MVP: two phones on different networks create/join via lin
 
 ---
 
-*Next step once approved: M0 scaffold PR (Vite + Tailwind + i18n + Pages pipeline) so every subsequent milestone lands on a deployable main branch.*
+## 12. What was built
+
+The implementation follows this plan. Four deliberate changes were made while
+building, each because the code proved the plan wrong or incomplete:
+
+**All five categories shipped, not the three-category MVP.** The provider
+interface (§4.1) made restaurants and activities cheap enough to include once
+the swipe engine existed, so the M4/M5 cutline was unnecessary.
+
+**A second sync adapter was added.** The plan assumed Firebase or nothing,
+which made group mode undemonstrable without a project and credentials. The
+`SyncAdapter` interface (`src/sync/types.ts`) now has two implementations:
+Firebase RTDB, and a same-device adapter over BroadcastChannel + localStorage
+used automatically when Firebase is unconfigured. Screens never branch on
+which is active; they read `isCrossDevice` only to show an honest notice.
+Identity in the local adapter is **per tab** (sessionStorage), so two tabs are
+two genuine participants and a real group round can be played on one machine.
+
+**Firebase is dynamically imported.** A static import put the whole SDK in the
+main bundle even for solo rounds, which never touch it — 802 kB, 225 kB
+gzipped. The adapter now imports `firebase/{app,auth,database}` on first use,
+cutting the initial bundle to 456 kB / 150 kB gzipped, with Firebase fetched
+only when a configured group round starts.
+
+**TanStack Query was dropped.** Exactly one screen fetches a deck, once, with
+no cross-screen cache to share. A `fetchJson` helper with timeout, bounded
+retries and backoff (`src/lib/http.ts`) plus an aborting `useDeck` hook covered
+the requirement, so the dependency earned nothing.
+
+**Offline snapshots carry no image URLs.** The fallback datasets
+(`src/data/fallback*.ts`) deliberately omit image URLs: TheCocktailDB,
+TheMealDB and TMDB all use opaque CDN hashes that cannot be derived offline,
+so a fabricated URL would render as a broken image. Those cards use the
+gradient placeholder instead, which reads as designed rather than broken.
+
+### Verification performed
+
+- **32 unit tests** over the match logic, seeded shuffle, provider registry and
+  DE/EN key parity — the parts where a silent bug is expensive.
+- **Browser end-to-end test** (`e2e/smoke.mjs`) driving the real build: home
+  render, language switch, deck build, left-swipe advance, drag-to-like ending
+  a solo round, session creation, a second tab joining, identical decks on both
+  devices, one like not matching, and a unanimous match landing on both at once.
+- **Stress testing** of the swipe input, which caught a real race: a card
+  promoted to the top could inherit the previous card's pending trigger and
+  swipe two cards on one tap. Triggers are now bound to a specific card id.
+- **Responsive checks** at 320 / 390 / 1280 px in light and dark, plus
+  geolocation granted and denied paths.
+
+### Known gaps
+
+- **Live API calls are unverified from the build environment.** Its egress
+  proxy allowlists package registries only, so TheCocktailDB, TheMealDB, TMDB,
+  Overpass and Photon could not be reached during development. The client code,
+  response mapping and fallback paths are implemented against each API's
+  documented contract, and the fallback paths are confirmed working — but the
+  live responses need one pass in a real browser.
+- **Firebase group sync is unexercised end to end**, for the same reason and
+  because it needs a project. The local adapter validates the state machine
+  (join, freeze, likes, unanimity, write-once winner, exhaustion); the Firebase
+  adapter implements that same interface against RTDB.
+- **Security rules are unit-tested by inspection only.** Running them against
+  the Firebase emulator is the M6 task in §9 and remains outstanding.
+- No PWA/offline shell, no rematch-with-top-10, no App Check yet — all §9 M5/M6
+  items.
