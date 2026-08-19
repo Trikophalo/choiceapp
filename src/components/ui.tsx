@@ -17,7 +17,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'bg-gradient-sunset text-white shadow-soft hover:-translate-y-0.5 active:translate-y-0',
   secondary:
     'bg-surface text-ink ring-1 ring-line hover:bg-surface-sunk',
-  ghost: 'text-ink-muted hover:text-ink',
+  ghost: 'text-ink-muted hover:bg-surface-sunk hover:text-ink active:scale-[0.98]',
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -80,7 +80,7 @@ export function BackLink({ to, label }: { to: string; label: string }) {
   return (
     <Link
       to={to}
-      className="-ml-2 inline-flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-ink-muted transition hover:text-ink"
+      className="-ml-2 inline-flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-medium text-ink-muted transition hover:bg-surface-sunk hover:text-ink active:scale-95"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M15 18l-6-6 6-6" />

@@ -118,6 +118,22 @@
     color: inherit;
   }
 
+  /* Tailwind v4's preflight leaves buttons with cursor: default, which makes
+     the whole app feel inert on desktop. Every enabled control is a pointer. */
+  button:not(:disabled),
+  [role='button'],
+  a,
+  label[for],
+  input[type='range'],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;

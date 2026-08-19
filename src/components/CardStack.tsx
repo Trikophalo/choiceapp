@@ -77,7 +77,7 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
           type="button"
           onClick={() => trigger('nope')}
           aria-label={t('swipe.nopeAria', { title: top?.title ?? '' })}
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-nope shadow-soft ring-1 ring-line transition active:scale-95 hover:-translate-y-0.5"
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-surface text-nope shadow-soft ring-1 ring-line transition hover:-translate-y-0.5 hover:shadow-card hover:ring-nope/40 active:scale-90"
         >
           <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -88,7 +88,7 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
           type="button"
           onClick={() => trigger('like')}
           aria-label={t('swipe.likeAria', { title: top?.title ?? '' })}
-          className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-sunset text-white shadow-card transition active:scale-95 hover:-translate-y-0.5"
+          className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-sunset text-white shadow-card transition hover:-translate-y-0.5 hover:brightness-105 hover:shadow-card active:scale-90"
         >
           <svg viewBox="0 0 24 24" className="h-9 w-9" fill="currentColor">
             <path d="M12 20.5l-1.4-1.26C5.7 14.9 2.8 12.3 2.8 9.1 2.8 6.6 4.8 4.6 7.3 4.6c1.4 0 2.8.66 3.7 1.7.9-1.04 2.3-1.7 3.7-1.7 2.5 0 4.5 2 4.5 4.5 0 3.2-2.9 5.8-7.8 10.14L12 20.5z" />

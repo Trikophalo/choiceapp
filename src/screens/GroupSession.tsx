@@ -420,6 +420,18 @@ function Lobby({
       </h1>
       <p className="mt-2 text-ink-muted">{t('group.lobbyBody')}</p>
 
+      {sync.isCrossDevice && (
+        // Positive confirmation: with Firebase configured, the shared link
+        // genuinely works on other devices — say so instead of leaving the
+        // absence of a warning to speak for itself.
+        <div className="mt-5 flex items-center gap-2 rounded-2xl bg-surface-sunk p-3.5 text-sm font-medium text-like">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          {t('group.liveSync')}
+        </div>
+      )}
+
       {!sync.isCrossDevice && (
         // Warn before the link is sent, not after a friend hits a dead end.
         // Styled as a warning rather than a note because sharing this link with

@@ -143,7 +143,8 @@
     "noBackendBody": "Dieser Link funktioniert nur in dem Browser, der ihn erstellt hat, weil kein Sync-Backend eingerichtet ist. Bitte den Host, Firebase-Einstellungen zu ergänzen — die README erklärt es in etwa drei Minuten.",
     "redealTitle": "Noch kein Match",
     "redealBody": "Keine Karte hat allen gefallen — ein neuer Stapel mit neuen Optionen wird gemischt.",
-    "roundOf": "Runde {{round}} von {{max}}"
+    "roundOf": "Runde {{round}} von {{max}}",
+    "liveSync": "Live-Sync aktiv — dieser Link funktioniert auf jedem Gerät."
   },
   "language": {
     "label": "Sprache",
@@ -198,6 +199,11 @@
     "remove": "{{title}} entfernen",
     "limit": "Maximal {{max}} Einträge erreicht.",
     "start": "Mit {{count}} Karten starten",
-    "needMore": "Füge mindestens 2 Optionen hinzu"
+    "needMore": "Füge mindestens 2 Optionen hinzu",
+    "uploadPhoto": "Foto hochladen",
+    "uploading": "Wird komprimiert…",
+    "uploadFailed": "Dieses Bild konnte nicht verwendet werden. Probier ein anderes.",
+    "imageBudget": "Bild-Limit für dieses Deck erreicht — neue Einträge kommen ohne Foto dazu.",
+    "orUrl": "oder Bildlink einfügen (https://…)"
   }
 }

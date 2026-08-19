@@ -4,10 +4,10 @@ import { useCustomStore } from '@/store/useCustomStore'
 
 /**
  * The user's own deck. The only category where images are optional — cards
- * without one get the branded gradient tile. In group mode this follows the
- * host-builds-the-deck model automatically: the host's entries are snapshotted
- * into the session like any other deck.
- */
+ * without one get the branded gradient tile. Images can be an https URL or an
+ * uploaded photo stored as a compressed data URI (see lib/imageUpload); either
+ * way they travel inside the deck snapshot, so group guests see them without
+ * any upload infrastructure. */
 export const customProvider: DeckProvider = {
   id: 'custom',
   capabilities: { needsLocation: false, supportsRatingFilter: false },
@@ -21,7 +21,10 @@ export const customProvider: DeckProvider = {
           title: entry.title,
           subtitle: entry.subtitle,
           imageUrl:
-            entry.imageUrl?.startsWith('https://') ? entry.imageUrl : undefined,
+            entry.imageUrl?.startsWith('https://') ||
+            entry.imageUrl?.startsWith('data:image/')
+              ? entry.imageUrl
+              : undefined,
           accentSeed: entry.id,
         }),
       )

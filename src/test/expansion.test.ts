@@ -95,3 +95,24 @@ describe('LocalSync redeal', () => {
     expect(session.deck.map((card: Card) => card.id)).toEqual(['a', 'b'])
   })
 })
+
+describe('custom deck uploads', () => {
+  it('accepts https URLs and uploaded data URIs, rejects anything else', async () => {
+    const { useCustomStore } = await import('@/store/useCustomStore')
+    const { customProvider } = await import('@/providers/custom')
+    useCustomStore.setState({
+      entries: [
+        { id: 'a', title: 'Https', imageUrl: 'https://example.com/x.jpg' },
+        { id: 'b', title: 'Upload', imageUrl: 'data:image/jpeg;base64,/9j/4AAQ' },
+        { id: 'c', title: 'Evil', imageUrl: 'javascript:alert(1)' },
+        { id: 'd', title: 'None' },
+      ],
+    })
+    const deck = await customProvider.fetchDeck({ locale: 'en', size: 10, seed: 's' })
+    const byTitle = Object.fromEntries(deck.map((card) => [card.title, card.imageUrl]))
+    expect(byTitle.Https).toBe('https://example.com/x.jpg')
+    expect(byTitle.Upload).toMatch(/^data:image\//)
+    expect(byTitle.Evil).toBeUndefined()
+    expect(byTitle.None).toBeUndefined()
+  })
+})

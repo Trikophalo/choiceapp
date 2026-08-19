@@ -27,10 +27,10 @@ export function ThemeToggle() {
           onClick={() => setTheme(option)}
           aria-pressed={theme === option}
           title={t(`theme.${option}`)}
-          className={`rounded-full p-1.5 transition ${
+          className={`rounded-full p-1.5 transition active:scale-90 ${
             theme === option
               ? 'bg-surface text-ink shadow-soft'
-              : 'text-ink-muted hover:text-ink'
+              : 'text-ink-muted hover:bg-surface/70 hover:text-ink'
           }`}
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill={option === 'dark' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round">

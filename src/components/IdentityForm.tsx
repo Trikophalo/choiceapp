@@ -76,10 +76,10 @@ export function IdentityForm({
                 onClick={() => setEmoji(choice)}
                 aria-pressed={emoji === choice}
                 aria-label={choice}
-                className={`flex aspect-square items-center justify-center rounded-2xl text-2xl transition ${
+                className={`flex aspect-square items-center justify-center rounded-2xl text-2xl transition active:scale-90 ${
                   emoji === choice
                     ? 'bg-surface shadow-soft ring-2 ring-accent'
-                    : 'bg-surface-sunk hover:bg-surface'
+                    : 'bg-surface-sunk hover:-translate-y-0.5 hover:bg-surface hover:shadow-soft'
                 }`}
               >
                 {choice}

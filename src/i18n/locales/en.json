@@ -143,7 +143,8 @@
     "noBackendBody": "This link only works in the browser that created it, because no sync backend is configured. Ask the host to add Firebase settings — the README explains how in about three minutes.",
     "redealTitle": "No match yet",
     "redealBody": "Nobody agreed on a card — a fresh deck with new options is being dealt.",
-    "roundOf": "Round {{round}} of {{max}}"
+    "roundOf": "Round {{round}} of {{max}}",
+    "liveSync": "Live sync active — this link works on any device."
   },
   "language": {
     "label": "Language",
@@ -198,6 +199,11 @@
     "remove": "Remove {{title}}",
     "limit": "Maximum of {{max}} entries reached.",
     "start": "Start with {{count}} cards",
-    "needMore": "Add at least 2 options"
+    "needMore": "Add at least 2 options",
+    "uploadPhoto": "Upload photo",
+    "uploading": "Compressing…",
+    "uploadFailed": "That image could not be used. Try a different one.",
+    "imageBudget": "Image limit for this deck reached — new entries will be added without a photo.",
+    "orUrl": "or paste an image link (https://…)"
   }
 }

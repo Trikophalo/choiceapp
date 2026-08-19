@@ -18,10 +18,10 @@ export function LanguageToggle() {
           type="button"
           onClick={() => void i18n.changeLanguage(locale)}
           aria-pressed={active === locale}
-          className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+          className={`rounded-full px-3 py-1.5 text-sm font-medium transition active:scale-90 ${
             active === locale
               ? 'bg-surface text-ink shadow-soft'
-              : 'text-ink-muted hover:text-ink'
+              : 'text-ink-muted hover:bg-surface/70 hover:text-ink'
           }`}
         >
           {locale.toUpperCase()}
