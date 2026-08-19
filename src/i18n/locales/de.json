@@ -38,7 +38,17 @@
     "cocktailsHint": "Drinks, die sich lohnen",
     "recipesHint": "Etwas zum Kochen heute Abend",
     "moviesHint": "Was schauen wir?",
-    "activitiesHint": "Dinge, die man wirklich macht"
+    "activitiesHint": "Dinge, die man wirklich macht",
+    "sights": "Sehenswürdigkeiten",
+    "sightsHint": "Sehenswertes in deiner Nähe",
+    "series": "Serien",
+    "seriesHint": "Dein nächster Binge",
+    "anime": "Animes",
+    "animeHint": "Serien und Filme aus Japan",
+    "proteinRecipes": "Protein-Rezepte",
+    "proteinRecipesHint": "Eiweißreich kochen",
+    "custom": "Eigenes Deck",
+    "customHint": "Über eigene Optionen swipen"
   },
   "filters": {
     "title": "Eingrenzen",
@@ -68,8 +78,7 @@
     "errorTitle": "Etwas ist schiefgelaufen",
     "errorBody": "Die Quelle hat nicht geantwortet. Prüfe deine Verbindung und versuch es nochmal.",
     "noRestaurantsTitle": "Nichts in der Nähe",
-    "noRestaurantsBody": "Im Umkreis von {{km}} km gab es keine Treffer. Versuch einen größeren Radius.",
-    "stockBadge": "Symbolbild"
+    "noRestaurantsBody": "Im Umkreis von {{km}} km gab es keine Treffer. Versuch einen größeren Radius."
   },
   "result": {
     "soloTitle": "Deine Wahl",
@@ -131,7 +140,10 @@
     "demoNoticeBody": "Es ist kein Sync-Backend eingerichtet, deshalb funktioniert diese Runde nur zwischen Tabs in diesem Browser. Öffne einen zweiten Tab zum Ausprobieren. Damit Freunde auf ihren eigenen Handys mitspielen können, ergänze die Firebase-Einstellungen (siehe README).",
     "backHome": "Zurück zum Start",
     "noBackendTitle": "Gruppenrunden sind noch nicht eingerichtet",
-    "noBackendBody": "Dieser Link funktioniert nur in dem Browser, der ihn erstellt hat, weil kein Sync-Backend eingerichtet ist. Bitte den Host, Firebase-Einstellungen zu ergänzen — die README erklärt es in etwa drei Minuten."
+    "noBackendBody": "Dieser Link funktioniert nur in dem Browser, der ihn erstellt hat, weil kein Sync-Backend eingerichtet ist. Bitte den Host, Firebase-Einstellungen zu ergänzen — die README erklärt es in etwa drei Minuten.",
+    "redealTitle": "Noch kein Match",
+    "redealBody": "Keine Karte hat allen gefallen — ein neuer Stapel mit neuen Optionen wird gemischt.",
+    "roundOf": "Runde {{round}} von {{max}}"
   },
   "language": {
     "label": "Sprache",
@@ -161,7 +173,10 @@
     "year": "Jahr",
     "overview": "Handlung",
     "tags": "Gut für",
-    "rated": "Freigabe"
+    "rated": "Freigabe",
+    "genres": "Genres",
+    "episodes": "Folgen",
+    "amenity": "Art"
   },
   "footer": {
     "attribution": "Filmdaten von TMDB. Drinks und Rezepte von TheCocktailDB und TheMealDB. Orte von OpenStreetMap-Mitwirkenden.",
@@ -172,5 +187,17 @@
     "hint": "Karte antippen für Details",
     "backToSwiping": "Zurück zum Swipen",
     "stockPhoto": "Symbolbild — nicht dieser konkrete Ort."
+  },
+  "custom": {
+    "title": "Eigenes Deck",
+    "body": "Füge die Optionen hinzu, zwischen denen ihr entscheiden wollt — mindestens zwei. Ein Bildlink ist optional.",
+    "entryTitle": "Option",
+    "entryPlaceholder": "z. B. Rom",
+    "entryImage": "Bildlink (optional)",
+    "add": "Hinzufügen",
+    "remove": "{{title}} entfernen",
+    "limit": "Maximal {{max}} Einträge erreicht.",
+    "start": "Mit {{count}} Karten starten",
+    "needMore": "Füge mindestens 2 Optionen hinzu"
   }
 }

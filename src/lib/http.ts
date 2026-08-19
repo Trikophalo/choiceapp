@@ -65,3 +65,48 @@ export function truncate(text: string | undefined | null, max: number): string {
   const lastSpace = cut.lastIndexOf(' ')
   return `${cut.slice(0, lastSpace > max * 0.6 ? lastSpace : max).trimEnd()}…`
 }
+
+/**
+ * JSONP fallback for public APIs that never send CORS headers — the iTunes
+ * Search API being the important one here. A <script> tag is exempt from the
+ * same-origin policy, so the response arrives as a function call instead of a
+ * blocked fetch. Only ever use this with trusted, well-known endpoints.
+ */
+export function fetchJsonp<T>(
+  url: string,
+  { timeoutMs = 10_000, callbackParam = 'callback' } = {},
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    if (typeof document === 'undefined') {
+      reject(new HttpError('jsonp-unavailable'))
+      return
+    }
+
+    const name = `__jsonp_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
+    const script = document.createElement('script')
+    const timer = setTimeout(() => {
+      cleanup()
+      reject(new HttpError('jsonp-timeout'))
+    }, timeoutMs)
+
+    function cleanup() {
+      clearTimeout(timer)
+      delete (window as unknown as Record<string, unknown>)[name]
+      script.remove()
+    }
+
+    ;(window as unknown as Record<string, (data: T) => void>)[name] = (
+      data: T,
+    ) => {
+      cleanup()
+      resolve(data)
+    }
+
+    script.onerror = () => {
+      cleanup()
+      reject(new HttpError('jsonp-failed'))
+    }
+    script.src = `${url}${url.includes('?') ? '&' : '?'}${callbackParam}=${name}`
+    document.head.appendChild(script)
+  })
+}

@@ -1,4 +1,5 @@
 import type { Card, SessionState } from '@/types'
+import { MAX_ROUNDS } from '@/lib/match'
 import type { CreateSessionInput, JoinInput, SyncAdapter } from './types'
 
 /**
@@ -213,6 +214,42 @@ export class LocalSync implements SyncAdapter {
       }
     })
     return claimed
+  }
+
+  async redeal(
+    sessionId: string,
+    deck: Card[],
+    nextRound: number,
+    seenIds: string[],
+  ): Promise<void> {
+    mutate(sessionId, (session) => {
+      if (session.winner) return null
+      if (!deck.length) {
+        // Nothing unseen left: finalise at the cap, stay exhausted.
+        return {
+          ...session,
+          meta: { ...session.meta, round: MAX_ROUNDS, seenIds },
+        }
+      }
+      const participants = Object.fromEntries(
+        Object.entries(session.participants).map(([uid, participant]) => [
+          uid,
+          { ...participant, progress: 0, done: false },
+        ]),
+      )
+      return {
+        ...session,
+        deck,
+        likes: {},
+        participants,
+        meta: {
+          ...session.meta,
+          status: 'active',
+          round: nextRound,
+          seenIds,
+        },
+      }
+    })
   }
 
   async markExhausted(sessionId: string): Promise<void> {

@@ -24,7 +24,7 @@ interface SwipeCardProps {
   onSwipe: (direction: SwipeDirection) => void
   /** Set to fire a programmatic swipe from buttons or the keyboard. */
   triggered?: SwipeDirection | null
-  labels: { like: string; nope: string; details: string; stock: string }
+  labels: { like: string; nope: string; details: string }
   /** Opens the detail sheet. A tap must never count as a swipe. */
   onOpenDetails?: () => void
 }
@@ -168,11 +168,6 @@ export function SwipeCard({
           </button>
         )}
 
-        {card.imageIsStock && (
-          <span className="absolute bottom-[6.5rem] right-4 rounded-full bg-black/45 px-2 py-1 text-[0.65rem] font-medium uppercase tracking-wide text-white/85 backdrop-blur-md">
-            {labels.stock}
-          </span>
-        )}
 
         <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
           <h2 className="text-[1.6rem] font-semibold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl">

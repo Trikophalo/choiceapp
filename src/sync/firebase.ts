@@ -1,4 +1,5 @@
 import type { Card, SessionState } from '@/types'
+import { MAX_ROUNDS } from '@/lib/match'
 import type { CreateSessionInput, JoinInput, SyncAdapter } from './types'
 import { firebaseConfig } from './firebaseConfig'
 
@@ -234,6 +235,49 @@ export class FirebaseSync implements SyncAdapter {
       })
     }
     return result.committed
+  }
+
+  async redeal(
+    sessionId: string,
+    deck: Card[],
+    nextRound: number,
+    seenIds: string[],
+  ): Promise<void> {
+    const { db, dbApi } = await this.load()
+
+    if (!deck.length) {
+      await dbApi.update(dbApi.ref(db, this.path(sessionId, '/meta')), {
+        round: MAX_ROUNDS,
+        seenIds,
+      })
+      return
+    }
+
+    // One atomic multi-path update: guests can never observe a half-reset
+    // round (new deck with old likes, or active status with stale progress).
+    const current = await new Promise<SessionState | null>((resolve) => {
+      const stop = dbApi.onValue(
+        dbApi.ref(db, this.path(sessionId)),
+        (snapshot) => {
+          stop()
+          resolve(normalise(snapshot.val()))
+        },
+        { onlyOnce: true },
+      )
+    })
+
+    const updates: Record<string, unknown> = {
+      deck,
+      likes: null,
+      'meta/status': 'active',
+      'meta/round': nextRound,
+      'meta/seenIds': seenIds,
+    }
+    for (const uid of Object.keys(current?.participants ?? {})) {
+      updates[`participants/${uid}/progress`] = 0
+      updates[`participants/${uid}/done`] = false
+    }
+    await dbApi.update(dbApi.ref(db, this.path(sessionId)), updates)
   }
 
   async markExhausted(sessionId: string): Promise<void> {

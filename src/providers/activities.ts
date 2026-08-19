@@ -11,8 +11,11 @@ export const activitiesProvider: DeckProvider = {
   id: 'activities',
   capabilities: { needsLocation: false, supportsRatingFilter: false },
 
-  async fetchDeck({ locale, size, seed, signal }: DeckOptions): Promise<Card[]> {
-    const picked = seededShuffle(ACTIVITIES, seed).slice(0, size)
+  async fetchDeck({ locale, size, seed, excludeIds, signal }: DeckOptions): Promise<Card[]> {
+    const excluded = new Set(excludeIds ?? [])
+    const picked = seededShuffle(ACTIVITIES, seed)
+      .filter((activity) => !excluded.has(`activity:${activity.id}`))
+      .slice(0, size)
 
     // The dataset carries the text; Commons supplies the photograph. A miss
     // simply leaves imageUrl undefined and the gradient tile takes over.

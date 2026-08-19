@@ -1,9 +1,14 @@
 export type CategoryId =
   | 'restaurants'
+  | 'sights'
   | 'cocktails'
   | 'recipes'
+  | 'proteinRecipes'
   | 'movies'
+  | 'series'
+  | 'anime'
   | 'activities'
+  | 'custom'
 
 export type Locale = 'en' | 'de'
 
@@ -41,8 +46,10 @@ export interface DeckOptions {
   /** Deterministic shuffle seed — same seed, same deck. */
   seed: string
   location?: GeoPoint
-  /** Restaurants: search radius in metres (max 10000). */
+  /** Restaurants/sights: search radius in metres (max 10000). */
   radiusM?: number
+  /** Card ids already shown in earlier rounds — never deal them again. */
+  excludeIds?: readonly string[]
   signal?: AbortSignal
 }
 
@@ -87,6 +94,10 @@ export interface SessionMeta {
   startedAt: number | null
   locale: Locale
   filters?: { radiusM?: number }
+  /** 1-based round counter; bumped by each automatic redeal. */
+  round?: number
+  /** Card ids dealt in previous rounds, excluded from redeals. */
+  seenIds?: string[]
 }
 
 export interface Winner {

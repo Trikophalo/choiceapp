@@ -47,7 +47,8 @@ export const moviesProvider: DeckProvider = {
   capabilities: { needsLocation: false, supportsRatingFilter: false },
 
   async fetchDeck(options: DeckOptions): Promise<Card[]> {
-    const { locale, size, seed, signal } = options
+    const { locale, size, seed, excludeIds, signal } = options
+    const excluded = new Set(excludeIds ?? [])
 
     if (!API_KEY) {
       // No TMDB key (the default for a fresh deployment). iTunes Search needs
@@ -59,7 +60,13 @@ export const moviesProvider: DeckProvider = {
       } catch (err) {
         if (signal?.aborted) throw err
       }
-      return seededShuffle(FALLBACK_MOVIES, seed).slice(0, size).map(toCard)
+      if (import.meta.env.DEV) {
+        console.info('[movies] iTunes unavailable, using bundled snapshot')
+      }
+      return seededShuffle(FALLBACK_MOVIES, seed)
+        .filter((movie) => !excluded.has(`tmdb:${movie.id}`))
+        .slice(0, size)
+        .map(toCard)
     }
 
     const language = locale === 'de' ? 'de-DE' : 'en-US'
@@ -80,7 +87,9 @@ export const moviesProvider: DeckProvider = {
         `${BASE}/discover/movie?${params}`,
         { signal, retries: 1 },
       )
-      const results = res.results ?? []
+      const results = (res.results ?? [])
+        .filter((movie) => movie.poster_path) // Cards always carry the poster.
+        .filter((movie) => !excluded.has(`tmdb:${movie.id}`))
       if (!results.length) throw new Error('empty results')
       return seededShuffle(results, seed).slice(0, size).map(toCard)
     } catch (err) {
@@ -92,7 +101,13 @@ export const moviesProvider: DeckProvider = {
       } catch {
         // fall through to the bundled snapshot
       }
-      return seededShuffle(FALLBACK_MOVIES, seed).slice(0, size).map(toCard)
+      if (import.meta.env.DEV) {
+        console.info('[movies] all sources failed, using bundled snapshot')
+      }
+      return seededShuffle(FALLBACK_MOVIES, seed)
+        .filter((movie) => !excluded.has(`tmdb:${movie.id}`))
+        .slice(0, size)
+        .map(toCard)
     }
   },
 }

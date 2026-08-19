@@ -3,14 +3,22 @@ import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
 import { FALLBACK_MEALS } from '@/data/fallbackMeals'
 
-// TheMealDB — same family as TheCocktailDB: keyless test key, CORS-enabled.
-// Content is English-only; food names travel well across languages, and the
-// category/area labels get translated through the i18n layer.
-const BASE = 'https://www.themealdb.com/api/json/v1/1'
+/**
+ * Protein-focused recipes from TheMealDB: the protein-heavy categories
+ * (chicken, beef, seafood, pork, lamb) plus an ingredient-keyword score.
+ *
+ * Honesty note: TheMealDB carries no macro data, so this is a heuristic for
+ * "protein-forward dishes" — the badge says "high protein", never an invented
+ * gram figure.
+ */
 
-const CATEGORIES = [
-  'Beef', 'Chicken', 'Dessert', 'Lamb', 'Pasta',
-  'Pork', 'Seafood', 'Side', 'Starter', 'Vegetarian',
+const BASE = 'https://www.themealdb.com/api/json/v1/1'
+const PROTEIN_CATEGORIES = ['Chicken', 'Beef', 'Seafood', 'Pork', 'Lamb', 'Goat']
+
+const PROTEIN_KEYWORDS = [
+  'chicken', 'beef', 'pork', 'lamb', 'turkey', 'egg', 'fish', 'salmon',
+  'tuna', 'shrimp', 'prawn', 'tofu', 'lentil', 'bean', 'chickpea', 'quark',
+  'cottage cheese', 'yogurt', 'steak', 'mince',
 ]
 
 interface RawMeal {
@@ -38,24 +46,26 @@ function ingredientsOf(meal: RawMeal): string[] {
   return list
 }
 
-function toCard(meal: RawMeal): Card {
+/** Exported for tests: counts distinct protein sources in an ingredient list. */
+export function proteinScore(ingredients: readonly string[]): number {
+  const text = ingredients.join(' ').toLowerCase()
+  return PROTEIN_KEYWORDS.filter((keyword) => text.includes(keyword)).length
+}
+
+function toCard(meal: RawMeal, badge: string): Card {
   const ingredients = ingredientsOf(meal)
   return {
     id: `mealdb:${meal.idMeal}`,
     title: meal.strMeal,
-    // Ingredients tell you what the dish is; the first sentence of the method
-    // does not ("Bring a large pot of salted water to a boil…").
     subtitle: ingredients.length
       ? ingredients
           .slice(0, 4)
-          .map((entry) => entry.replace(/^[\d\/.,\s]*(g|kg|ml|l|tbs|tbsp|tsp|cups?|oz|lb)?\s*/i, ''))
+          .map((entry) => entry.replace(/^[\d/.,\s]*(g|kg|ml|l|tbs|tbsp|tsp|cups?|oz|lb)?\s*/i, ''))
           .filter(Boolean)
           .join(' · ')
       : truncate(meal.strInstructions, 110),
-    // Full-resolution thumbnail (~700px). The "/preview" variant is only
-    // ~250px and visibly soft once a card is drawn on a retina screen.
     imageUrl: meal.strMealThumb ?? undefined,
-    badge: meal.strArea ?? meal.strCategory ?? undefined,
+    badge,
     meta: {
       ...(meal.strCategory ? { category: meal.strCategory } : {}),
       ...(meal.strArea ? { area: meal.strArea } : {}),
@@ -72,16 +82,15 @@ function toCard(meal: RawMeal): Card {
   }
 }
 
-export const recipesProvider: DeckProvider = {
-  id: 'recipes',
+export const proteinRecipesProvider: DeckProvider = {
+  id: 'proteinRecipes',
   capabilities: { needsLocation: false, supportsRatingFilter: false },
 
-  async fetchDeck({ size, seed, excludeIds, signal }: DeckOptions): Promise<Card[]> {
+  async fetchDeck({ locale, size, seed, excludeIds, signal }: DeckOptions): Promise<Card[]> {
+    const badge = locale === 'de' ? 'Eiweißreich' : 'High protein'
     const excluded = new Set(excludeIds ?? [])
     try {
-      // Spread the deck across a few categories so it doesn't read as
-      // "twenty-five beef dishes".
-      const chosen = seededShuffle(CATEGORIES, seed).slice(0, 4)
+      const chosen = seededShuffle(PROTEIN_CATEGORIES, seed).slice(0, 3)
       const lists = await Promise.all(
         chosen.map(async (category) => {
           try {
@@ -98,7 +107,7 @@ export const recipesProvider: DeckProvider = {
 
       const pool = lists
         .flat()
-        .filter((meal) => meal.strMealThumb) // Cards always carry an image.
+        .filter((meal) => meal.strMealThumb)
         .filter((meal) => !excluded.has(`mealdb:${meal.idMeal}`))
       if (!pool.length) throw new Error('empty pool')
 
@@ -117,16 +126,24 @@ export const recipesProvider: DeckProvider = {
         }),
       )
 
-      return details.map(toCard)
+      // The categories are already protein-forward; the keyword score
+      // additionally sorts the strongest matches to the front of the deck.
+      return details
+        .map((meal) => ({ meal, score: proteinScore(ingredientsOf(meal)) }))
+        .sort((a, b) => b.score - a.score)
+        .map(({ meal }) => toCard(meal, badge))
     } catch (err) {
       if (signal?.aborted) throw err
       if (import.meta.env.DEV) {
-        console.info('[recipes] falling back to bundled snapshot:', err)
+        console.info('[proteinRecipes] falling back to bundled snapshot:', err)
       }
       return seededShuffle(FALLBACK_MEALS, seed)
+        .filter((meal) =>
+          PROTEIN_CATEGORIES.includes((meal as RawMeal).strCategory ?? ''),
+        )
         .filter((meal) => !excluded.has(`mealdb:${(meal as RawMeal).idMeal}`))
         .slice(0, size)
-        .map((meal) => toCard(meal as RawMeal))
+        .map((meal) => toCard(meal as RawMeal, badge))
     }
   },
 }

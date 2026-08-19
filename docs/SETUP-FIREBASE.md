@@ -28,8 +28,12 @@ Damit bekommt jedes Gerät eine ID, ohne dass sich jemand registrieren muss.
 hineinkopieren und **Veröffentlichen** klicken.
 
 Diese Regeln sind wichtig: Sie sorgen dafür, dass jede Person nur ihre eigenen
-Swipes schreiben kann, der Kartenstapel nach dem Start unveränderlich ist und ein
-Gewinner nur genau einmal gesetzt werden kann.
+Swipes schreiben kann, ein Gewinner nur genau einmal gesetzt werden kann und nur
+der Host nach einer Runde ohne Einigung einen neuen Stapel austeilen darf.
+
+> **Hinweis bei Updates:** Wenn sich `firebase/database.rules.json` im Repo
+> ändert (z. B. für neue Features wie das automatische Neuausteilen), müssen die
+> Regeln in der Firebase-Konsole erneut eingefügt und veröffentlicht werden.
 
 ## 5. Web-App registrieren und Werte kopieren
 

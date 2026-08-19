@@ -1,6 +1,6 @@
 # SwipeDecide
 
-A Tinder-style decision app. Pick who is deciding (solo or group), pick a category — restaurants, cocktails, recipes, movies, activities — and swipe. **Solo:** the first card you like wins. **Group:** the first card *everyone* likes wins, and the round ends for all devices at once.
+A Tinder-style decision app. Pick who is deciding (solo or group), pick a category — restaurants, sights, cocktails, recipes, protein recipes, movies, TV shows, anime, activities, or your own custom deck — and swipe. **Solo:** the first card you like wins. **Group:** the first card *everyone* likes wins, and the round ends for all devices at once.
 
 Static site, deployable to GitHub Pages. Full UI in German and English. Ready to be wrapped as native iOS/Android apps with Capacitor — see [`docs/MOBILE-APPS.md`](docs/MOBILE-APPS.md).
 
@@ -80,11 +80,18 @@ Cocktails, recipes and activities need no configuration at all.
 
 | Category | Source | Notes |
 |---|---|---|
-| Restaurants | OpenStreetMap Overpass, optionally Google Places (New) | Radius up to 10 km, cards labelled with distance. Star ratings are deliberately never shown — the decision should come from the swipe. Google photos need a key |
-| Cocktails | TheCocktailDB | German instructions where available; offline snapshot as fallback |
+| Restaurants | OpenStreetMap Overpass, optionally Google Places (New) | Radius up to 10 km, cards labelled with distance. Every card shows a dish photo matching the cuisine (coffee for a café, stone-oven pizza for a pizzeria) from TheMealDB/Commons; Google photos of the exact venue need a key |
+| Sights | OpenStreetMap Overpass (tourism + historic) | Same radius flow as restaurants; photos of the actual landmark via its Commons tag or a photo taken at its coordinates |
+| Cocktails | TheCocktailDB (letter search) | The free key caps `filter.php` at its first ~25 alphabetical rows — decks are built from `search.php?f=<letter>` across seeded letters instead, so every drink can appear and alcoholic/non-alcoholic mix naturally |
 | Recipes | TheMealDB | English content; offline snapshot as fallback |
-| Movies | iTunes Search (keyless), TMDB when a key is set | **Real posters with no key required.** iTunes needs no account and is localised per storefront; TMDB takes over when configured |
+| Protein recipes | TheMealDB (protein categories + keyword score) | Heuristic, honestly labelled "high protein" — TheMealDB has no macro data, so no invented gram figures |
+| Movies | iTunes Search via JSONP (keyless), TMDB when a key is set | iTunes sends no CORS headers, so requests go through JSONP. Cards without a poster are dropped — every card shows the real cover |
+| TV shows | TVMaze (keyless, CORS), iTunes as fallback | Real cover art required per card |
+| Anime | Jikan v4 / MyAnimeList (keyless) | `sfw=true` plus a client-side rating guard keeps adult titles out; real cover art required per card |
 | Activities | Bundled bilingual dataset (51 entries) + Wikimedia Commons photos | The Bored API shut down in 2024, so the text is curated. Photos come from Commons via a curated per-entry search term — keyless |
+| Your own deck | Local entries (persisted on device) | Type the options yourself ("Rome / Paris / Barcelona"); the only category where images are optional |
+
+**Group rounds redeal themselves.** When everyone finishes a deck with no unanimous card, the host automatically deals a fresh deck of unseen cards — up to 3 rounds — before the ranked "no match" screen appears. Already-shown cards never come back (`meta.seenIds`).
 
 Each provider is one file behind a common interface, so replacing a dead source is a contained change. Every network-backed category degrades to a usable state rather than an error screen.
 

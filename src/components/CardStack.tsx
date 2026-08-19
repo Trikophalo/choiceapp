@@ -67,7 +67,6 @@ export function CardStack({ cards, index, onSwipe }: CardStackProps) {
               like: t('swipe.like'),
               nope: t('swipe.nope'),
               details: t('details.open', { title: card.title }),
-              stock: t('swipe.stockBadge'),
             }}
           />
         ))}

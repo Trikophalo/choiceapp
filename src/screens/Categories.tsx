@@ -16,6 +16,11 @@ export function Categories() {
 
   const choose = (id: CategoryId) => {
     setCategory(id)
+    // The custom deck needs its entries written before a round can start.
+    if (id === 'custom') {
+      navigate(`/custom?mode=${mode}`)
+      return
+    }
     if (getProvider(id).capabilities.needsLocation) {
       navigate(`/setup?mode=${mode}`)
       return

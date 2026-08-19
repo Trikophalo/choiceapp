@@ -7,11 +7,13 @@ import { useDeck } from '@/hooks/useDeck'
 import { getSync } from '@/sync'
 import { useAppStore } from '@/store/useAppStore'
 import {
+  MAX_ROUNDS,
   findUnanimousCardId,
   isExhausted,
   rankByLikes,
   stillSwiping,
 } from '@/lib/match'
+import { getProvider } from '@/providers'
 import { CardStack } from '@/components/CardStack'
 import { PresenceStrip } from '@/components/PresenceStrip'
 import { IdentityForm } from '@/components/IdentityForm'
@@ -39,10 +41,12 @@ export function GroupSession() {
   const [joining, setJoining] = useState(false)
   const [localIndex, setLocalIndex] = useState(0)
   const claimAttempted = useRef<string | null>(null)
+  const redealStarted = useRef<number>(0)
 
   const isParticipant = Boolean(uid && session?.participants?.[uid])
   const isHost = Boolean(uid && session?.meta.hostId === uid)
   const status = session?.meta.status
+  const round = session?.meta.round ?? 1
   const expired =
     session != null && Date.now() - session.meta.createdAt > SESSION_TTL_MS
 
@@ -70,6 +74,50 @@ export function GroupSession() {
     // Only re-sync when the round starts or the participant record appears.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, session?.meta.status])
+
+  /* ---- A redeal arrived: everyone starts the new deck from the top. ---- */
+  useEffect(() => {
+    if (round > 1) {
+      setLocalIndex(0)
+      claimAttempted.current = null
+    }
+  }, [round])
+
+  /* ---- Automatic redeal: the host deals a fresh deck with unseen cards
+     when everyone finished without a unanimous like, up to MAX_ROUNDS. ---- */
+  useEffect(() => {
+    if (!session || !sessionId || !isHost) return
+    if (status !== 'exhausted' || session.winner) return
+    if (round >= MAX_ROUNDS) return
+    if (redealStarted.current >= round + 1) return // Already dealing this one.
+    redealStarted.current = round + 1
+
+    const controller = new AbortController()
+    const seenSoFar = [
+      ...(session.meta.seenIds ?? []),
+      ...session.deck.map((card) => card.id),
+    ]
+
+    void getProvider(session.meta.category)
+      .fetchDeck({
+        locale: session.meta.locale ?? currentLocale(),
+        size: DECK_SIZE,
+        seed: `${sessionId}:r${round + 1}`,
+        location: location ?? undefined,
+        radiusM: session.meta.filters?.radiusM ?? radiusM,
+        excludeIds: seenSoFar,
+        signal: controller.signal,
+      })
+      .catch(() => [] as never[])
+      .then((deck) => {
+        if (controller.signal.aborted) return
+        // An empty deck finalises at the cap inside the adapter.
+        return sync.redeal(sessionId, deck, round + 1, seenSoFar)
+      })
+
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, round, isHost, sessionId])
 
   /* ---- Winner detection: run by whoever's like completed unanimity. ---- */
   useEffect(() => {
@@ -164,6 +212,27 @@ export function GroupSession() {
   }
 
   if (status === 'exhausted') {
+    const hostOnline = session.participants[session.meta.hostId]?.online
+    // While the host can still deal a fresh round, show the transition rather
+    // than the dead-end screen. A gone host can't redeal — final result then.
+    if (round < MAX_ROUNDS && hostOnline) {
+      return (
+        <Screen>
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <Spinner />
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+              {t('group.redealTitle')}
+            </h1>
+            <p className="mt-2 max-w-xs text-ink-muted">
+              {t('group.redealBody')}
+            </p>
+            <p className="mt-4 text-sm font-medium text-accent">
+              {t('group.roundOf', { round: round + 1, max: MAX_ROUNDS })}
+            </p>
+          </div>
+        </Screen>
+      )
+    }
     return <NoMatch session={session} />
   }
 
@@ -231,6 +300,11 @@ export function GroupSession() {
       <div className="flex items-center justify-between py-3">
         <BackLink to="/" label={t('common.back')} />
         <span className="text-sm font-medium text-ink-muted">
+          {round > 1 && (
+            <span className="mr-2 rounded-full bg-surface-sunk px-2 py-0.5 text-xs text-accent">
+              {t('group.roundOf', { round, max: MAX_ROUNDS })}
+            </span>
+          )}
           {t(`categories.${session.meta.category}`)}
         </span>
       </div>

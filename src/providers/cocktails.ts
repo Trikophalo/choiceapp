@@ -1,12 +1,30 @@
 import type { Card, DeckProvider, DeckOptions } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
-import { seededShuffle } from '@/lib/random'
+import { hashSeed, mulberry32, seededShuffle } from '@/lib/random'
 import { FALLBACK_COCKTAILS } from '@/data/fallbackCocktails'
 
-// TheCocktailDB: keyless for development ("1" is the shared public test key),
-// CORS-enabled, images included. Batch/random endpoints are premium-only, so
-// we list ids cheaply and hydrate only the cards we actually need.
+/**
+ * TheCocktailDB — keyless for development ("1" is the shared public test key),
+ * CORS-enabled, images included.
+ *
+ * The deck is built from `search.php?f=<letter>`: the free key caps the
+ * `filter.php` list endpoints at their first ~25 rows, which are alphabetical —
+ * so a filter-based deck contained almost only drinks starting with "A".
+ * Letter search has no such cap, returns FULL drink objects (no per-card
+ * hydration calls needed), and naturally mixes alcoholic and non-alcoholic
+ * drinks into one pool.
+ */
 const BASE = 'https://www.thecocktaildb.com/api/json/v1/1'
+
+// Letters weighted by how many drinks actually start with them; skips the
+// nearly-empty ones (q, u, x, y) so a draw is rarely wasted.
+const LETTERS = 'abcdefghijklmnoprstvwz'.split('')
+const LETTERS_PER_DECK = 6
+
+/** Deterministic letter draw — same seed, same letters, same deck. */
+export function lettersForSeed(seed: string, count = LETTERS_PER_DECK): string[] {
+  return seededShuffle(LETTERS, `letters:${seed}`).slice(0, count)
+}
 
 interface RawDrink {
   idDrink: string
@@ -37,7 +55,6 @@ function toCard(drink: RawDrink, locale: string): Card {
   return {
     id: `cocktaildb:${drink.idDrink}`,
     title: drink.strDrink,
-    // Ingredients read better on a card than a wall of instructions.
     subtitle: ingredients.length
       ? ingredients.slice(0, 4).join(' · ')
       : truncate(instructions, 110),
@@ -60,39 +77,63 @@ export const cocktailsProvider: DeckProvider = {
   id: 'cocktails',
   capabilities: { needsLocation: false, supportsRatingFilter: false },
 
-  async fetchDeck({ locale, size, seed, signal }: DeckOptions): Promise<Card[]> {
+  async fetchDeck({
+    locale,
+    size,
+    seed,
+    excludeIds,
+    signal,
+  }: DeckOptions): Promise<Card[]> {
+    const excluded = new Set(excludeIds ?? [])
     try {
-      // One cheap call returns the full id/name/thumb index for the filter.
-      const index = await fetchJson<{ drinks: RawDrink[] | null }>(
-        `${BASE}/filter.php?a=Alcoholic`,
-        { signal, retries: 1 },
-      )
-      const all = index.drinks ?? []
-      if (!all.length) throw new Error('empty index')
-
-      const picked = seededShuffle(all, seed).slice(0, size)
-
-      // Hydrate only the picked drinks (details aren't in the index response).
-      const details = await Promise.all(
-        picked.map(async (drink) => {
+      const letters = lettersForSeed(seed)
+      const batches = await Promise.all(
+        letters.map(async (letter) => {
           try {
-            const full = await fetchJson<{ drinks: RawDrink[] | null }>(
-              `${BASE}/lookup.php?i=${drink.idDrink}`,
+            const res = await fetchJson<{ drinks: RawDrink[] | null }>(
+              `${BASE}/search.php?f=${letter}`,
               { signal, retries: 1 },
             )
-            return full.drinks?.[0] ?? drink
+            return res.drinks ?? []
           } catch {
-            return drink // Keep the card; it still has a name and a photo.
+            return [] // One dead letter must not empty the deck.
           }
         }),
       )
 
-      return details.map((drink) => toCard(drink, locale))
+      const pool = batches
+        .flat()
+        .filter((drink) => drink.strDrinkThumb) // Cards always carry an image.
+        .filter((drink) => !excluded.has(`cocktaildb:${drink.idDrink}`))
+      if (!pool.length) throw new Error('empty pool')
+
+      // Interleave rather than plain shuffle: a plain shuffle of 6 letter
+      // batches can still cluster one letter; round-robin picks from each
+      // letter in turn so the deck reads properly mixed.
+      const byLetter = letters.map((letter) =>
+        seededShuffle(
+          pool.filter(
+            (d) => d.strDrink.toLowerCase().startsWith(letter),
+          ),
+          `${seed}:${letter}`,
+        ),
+      )
+      const mixed: RawDrink[] = []
+      const rand = mulberry32(hashSeed(`${seed}:mix`))
+      while (mixed.length < size && byLetter.some((b) => b.length)) {
+        const nonEmpty = byLetter.filter((b) => b.length)
+        const batch = nonEmpty[Math.floor(rand() * nonEmpty.length)]
+        mixed.push(batch.shift()!)
+      }
+
+      return mixed.slice(0, size).map((drink) => toCard(drink, locale))
     } catch (err) {
       if (signal?.aborted) throw err
-      // The API is occasionally rate limited; a bundled snapshot keeps the
-      // category usable rather than showing an error screen.
+      if (import.meta.env.DEV) {
+        console.info('[cocktails] falling back to bundled snapshot:', err)
+      }
       return seededShuffle(FALLBACK_COCKTAILS, seed)
+        .filter((d) => !excluded.has(`cocktaildb:${d.idDrink}`))
         .slice(0, size)
         .map((drink) => toCard(drink as RawDrink, locale))
     }

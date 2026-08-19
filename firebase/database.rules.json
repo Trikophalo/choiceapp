@@ -16,13 +16,13 @@
         },
 
         "deck": {
-          ".write": "auth != null && root.child('sessions/' + $sid + '/meta/hostId').val() === auth.uid && !data.exists()",
+          ".write": "auth != null && root.child('sessions/' + $sid + '/meta/hostId').val() === auth.uid && (!data.exists() || root.child('sessions/' + $sid + '/meta/status').val() === 'exhausted')",
           ".validate": "newData.hasChildren()"
         },
 
         "participants": {
           "$uid": {
-            ".write": "auth != null && $uid === auth.uid",
+            ".write": "auth != null && ($uid === auth.uid || (root.child('sessions/' + $sid + '/meta/hostId').val() === auth.uid && root.child('sessions/' + $sid + '/meta/status').val() === 'exhausted'))",
             "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 8" },
             "progress": { ".validate": "newData.isNumber() && newData.val() >= 0" },
@@ -34,6 +34,7 @@
         },
 
         "likes": {
+          ".write": "auth != null && root.child('sessions/' + $sid + '/meta/hostId').val() === auth.uid && root.child('sessions/' + $sid + '/meta/status').val() === 'exhausted' && !newData.exists()",
           "$cardId": {
             "$uid": {
               ".write": "auth != null && $uid === auth.uid && !data.exists() && root.child('sessions/' + $sid + '/meta/status').val() === 'active' && root.child('sessions/' + $sid + '/participants/' + $uid).exists()",

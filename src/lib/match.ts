@@ -1,5 +1,9 @@
 import type { Card, Participant, SessionState } from '@/types'
 
+/** Automatic redeals stop after this many rounds; then the ranked
+ *  "no match" screen takes over. */
+export const MAX_ROUNDS = 3
+
 /**
  * A card wins when EVERY participant has right-swiped it.
  *

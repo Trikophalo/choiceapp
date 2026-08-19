@@ -12,11 +12,11 @@ describe('provider registry', () => {
     }
   })
 
-  it('marks only restaurants as needing a location', () => {
+  it('marks exactly the location categories as needing one', () => {
     const needing = CATEGORY_ORDER.filter(
       (id) => PROVIDERS[id].capabilities.needsLocation,
     )
-    expect(needing).toEqual(['restaurants'])
+    expect(needing).toEqual(['restaurants', 'sights'])
   })
 })
 
@@ -33,6 +33,18 @@ describe('activities provider', () => {
   it('never returns more cards than requested', async () => {
     const deck = await activitiesProvider.fetchDeck({ locale: 'en', size: 5, seed: 's' })
     expect(deck).toHaveLength(5)
+  })
+
+  it('excludes ids already seen in earlier rounds', async () => {
+    const first = await activitiesProvider.fetchDeck({ locale: 'en', size: 10, seed: 's' })
+    const second = await activitiesProvider.fetchDeck({
+      locale: 'en',
+      size: 10,
+      seed: 's2',
+      excludeIds: first.map((card) => card.id),
+    })
+    const firstIds = new Set(first.map((card) => card.id))
+    expect(second.some((card) => firstIds.has(card.id))).toBe(false)
   })
 
   it('caps at the dataset size when asked for more', async () => {

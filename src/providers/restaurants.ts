@@ -1,7 +1,7 @@
 import type { Card, DeckProvider, DeckOptions, GeoPoint } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
-import { commonsFileUrl, findPhoto, findPhotoNear } from '@/lib/photos'
+import { dishPhotoFor } from '@/lib/dishPhotos'
 
 /**
  * Restaurants run a dual-provider strategy:
@@ -107,12 +107,14 @@ function osmToCard(element: OverpassElement, origin: GeoPoint): Card | null {
     id: `osm:${element.type}/${element.id}`,
     title: name,
     subtitle: descriptionParts.join(' · ') || undefined,
-    imageUrl: tags.image?.startsWith('https://')
-      ? tags.image
-      : commonsFileUrl(tags.wikimedia_commons),
+    // Image resolved in a later pass: always a dish photo matching the
+    // cuisine (product decision — a coffee for the café, a stone-oven pizza
+    // for the pizzeria), never a random venue/street photo.
+    imageUrl: undefined,
     badge: formatDistance(meters) ?? cuisine,
     meta: {
       ...(cuisine ? { cuisine } : {}),
+      ...(tags.amenity ? { amenity: tags.amenity } : {}),
       ...(street ? { address: street } : {}),
       ...(tags['addr:city'] ? { city: tags['addr:city'] } : {}),
       ...(tags.opening_hours ? { hours: tags.opening_hours } : {}),
@@ -147,54 +149,35 @@ out center 120;`
         retries: 0,
         signal,
       })
-      const points = new Map<string, GeoPoint>()
-      const cards: Card[] = []
-      for (const el of res.elements ?? []) {
-        const card = osmToCard(el, location)
-        if (!card) continue
-        const at = elementPoint(el)
-        if (at) points.set(card.id, at)
-        cards.push(card)
-      }
+      const cards = (res.elements ?? [])
+        .map((el) => osmToCard(el, location))
+        .filter((card): card is Card => card !== null)
+        .filter((card) => !(opts.excludeIds ?? []).includes(card.id))
       if (!cards.length) return []
 
       const deck = seededShuffle(cards, seed).slice(0, size)
 
-      // OSM elements rarely carry a photo tag, so the rest resolve one in two
-      // steps, best match first:
-      //   1. a Commons photo taken AT the venue's coordinates (geosearch) —
-      //      as close to "a picture of this restaurant" as keyless data gets;
-      //   2. failing that, a cuisine-typical photo, labelled as illustrative
-      //      so it cannot be mistaken for the actual place.
-      const needsPhoto = deck.filter((card) => !card.imageUrl)
-      if (needsPhoto.length) {
-        const resolve = async (card: Card): Promise<void> => {
-          const at = points.get(card.id)
-          if (at) {
-            const near = await findPhotoNear(at, 1280, signal)
-            if (near) {
-              card.imageUrl = near
-              return
+      // Every card gets a dish photo matching its cuisine/amenity (see
+      // lib/dishPhotos). Bounded by a time budget: photos enhance, never gate.
+      await Promise.race([
+        Promise.all(
+          deck.map(async (card, index) => {
+            const photo = await dishPhotoFor(
+              card.meta?.cuisine,
+              card.meta?.amenity,
+              `${seed}:${index}`,
+              signal,
+            )
+            if (photo) {
+              card.imageUrl = photo
+              // A matching dish, not this venue's own food — flagged so the
+              // detail sheet stays honest about it.
+              card.imageIsStock = true
             }
-          }
-          const generic = await findPhoto(
-            `${card.meta?.cuisine ?? 'restaurant'} food restaurant`,
-            1280,
-            signal,
-          )
-          if (generic) {
-            card.imageUrl = generic
-            card.imageIsStock = true
-          }
-        }
-
-        // Photos enhance, never gate: whatever has not resolved when the
-        // budget runs out stays a gradient tile.
-        await Promise.race([
-          Promise.all(needsPhoto.map(resolve)),
-          new Promise((finish) => setTimeout(finish, 5000)),
-        ])
-      }
+          }),
+        ),
+        new Promise((finish) => setTimeout(finish, 5000)),
+      ])
 
       return deck
     } catch (err) {

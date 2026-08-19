@@ -58,4 +58,18 @@ export interface SyncAdapter {
 
   /** Ends the round with no unanimous card. */
   markExhausted(sessionId: string): Promise<void>
+
+  /**
+   * Host only: replace the deck with fresh cards and start the next round —
+   * likes cleared, every participant's progress reset, `meta.round` bumped and
+   * the dealt ids appended to `meta.seenIds` so they never come back.
+   * An EMPTY deck finalises instead: the round counter jumps to the cap and
+   * the session stays exhausted (used when no unseen cards are left).
+   */
+  redeal(
+    sessionId: string,
+    deck: Card[],
+    nextRound: number,
+    seenIds: string[],
+  ): Promise<void>
 }

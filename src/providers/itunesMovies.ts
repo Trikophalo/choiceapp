@@ -1,5 +1,5 @@
 import type { Card, DeckOptions, Locale } from '@/types'
-import { fetchJson, truncate } from '@/lib/http'
+import { fetchJsonp, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
 
 /**
@@ -21,14 +21,18 @@ const TERMS = [
 ]
 
 interface ITunesResult {
-  trackId: number
-  trackName: string
+  trackId?: number
+  trackName?: string
+  collectionId?: number
+  collectionName?: string
+  artistName?: string
   artworkUrl100?: string
   longDescription?: string
   shortDescription?: string
   primaryGenreName?: string
   releaseDate?: string
   trackViewUrl?: string
+  collectionViewUrl?: string
   contentAdvisoryRating?: string
 }
 
@@ -45,10 +49,16 @@ export function upscaleArtwork(url: string | undefined): string | undefined {
 function toCard(item: ITunesResult): Card {
   const year = item.releaseDate ? item.releaseDate.slice(0, 4) : undefined
   const description = item.longDescription ?? item.shortDescription ?? ''
+  // TV seasons ("Breaking Bad, Season 1") read better as the show name.
+  const title =
+    item.trackName ??
+    item.artistName ??
+    item.collectionName?.replace(/,?\s+(Season|Staffel|Vol\.?)\s+\d+.*$/i, '') ??
+    'Untitled'
 
   return {
-    id: `itunes:${item.trackId}`,
-    title: item.trackName,
+    id: `itunes:${item.trackId ?? item.collectionId}`,
+    title,
     subtitle: truncate(description, 120),
     imageUrl: upscaleArtwork(item.artworkUrl100),
     badge: year ?? item.primaryGenreName,
@@ -58,8 +68,8 @@ function toCard(item: ITunesResult): Card {
       ...(item.contentAdvisoryRating ? { rated: item.contentAdvisoryRating } : {}),
       ...(description ? { overview: truncate(description, 600) } : {}),
     },
-    sourceUrl: item.trackViewUrl,
-    accentSeed: String(item.trackId),
+    sourceUrl: item.trackViewUrl ?? item.collectionViewUrl,
+    accentSeed: String(item.trackId ?? item.collectionId),
   }
 }
 
@@ -70,12 +80,18 @@ function storefront(locale: Locale): { country: string; lang: string } {
     : { country: 'US', lang: 'en_us' }
 }
 
-export async function fetchItunesMovies({
-  locale,
-  size,
-  seed,
-  signal,
-}: DeckOptions): Promise<Card[]> {
+export async function fetchItunesMovies(opts: DeckOptions): Promise<Card[]> {
+  return fetchItunesCatalog(opts, 'movie')
+}
+
+export async function fetchItunesSeries(opts: DeckOptions): Promise<Card[]> {
+  return fetchItunesCatalog(opts, 'tvShow')
+}
+
+async function fetchItunesCatalog(
+  { locale, size, seed, excludeIds }: DeckOptions,
+  media: 'movie' | 'tvShow',
+): Promise<Card[]> {
   const { country, lang } = storefront(locale)
   // A few terms, shuffled by seed, give a varied deck without a discover API.
   const terms = seededShuffle(TERMS, seed).slice(0, 4)
@@ -85,15 +101,14 @@ export async function fetchItunesMovies({
       try {
         const params = new URLSearchParams({
           term,
-          media: 'movie',
-          entity: 'movie',
+          media,
+          entity: media === 'movie' ? 'movie' : 'tvSeason',
           country,
           lang,
           limit: '25',
         })
-        const res = await fetchJson<{ results: ITunesResult[] }>(
+        const res = await fetchJsonp<{ results: ITunesResult[] }>(
           `${ENDPOINT}?${params}`,
-          { signal, retries: 1 },
         )
         return res.results ?? []
       } catch {
@@ -102,11 +117,14 @@ export async function fetchItunesMovies({
     }),
   )
 
-  // Same film can appear under several genre terms.
+  // Same title can appear under several genre terms.
   const seen = new Set<number>()
+  const excluded = new Set(excludeIds ?? [])
   const unique = batches.flat().filter((item) => {
-    if (!item.trackId || seen.has(item.trackId)) return false
-    seen.add(item.trackId)
+    const id = item.trackId ?? item.collectionId
+    if (!id || seen.has(id)) return false
+    seen.add(id)
+    if (excluded.has(`itunes:${id}`)) return false
     return Boolean(item.artworkUrl100) // A card without a poster is the bug.
   })
 

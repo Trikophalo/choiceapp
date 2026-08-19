@@ -38,7 +38,17 @@
     "cocktailsHint": "Drinks worth mixing",
     "recipesHint": "Something to cook tonight",
     "moviesHint": "What to watch",
-    "activitiesHint": "Things to actually do"
+    "activitiesHint": "Things to actually do",
+    "sights": "Sights",
+    "sightsHint": "Places worth seeing nearby",
+    "series": "TV shows",
+    "seriesHint": "Your next binge",
+    "anime": "Anime",
+    "animeHint": "Series and films from Japan",
+    "proteinRecipes": "Protein recipes",
+    "proteinRecipesHint": "High-protein cooking",
+    "custom": "Your own deck",
+    "customHint": "Swipe your own options"
   },
   "filters": {
     "title": "Narrow it down",
@@ -68,8 +78,7 @@
     "errorTitle": "Something went wrong",
     "errorBody": "The source didn't respond. Check your connection and try again.",
     "noRestaurantsTitle": "No places nearby",
-    "noRestaurantsBody": "Nothing matched within {{km}} km. Try a wider radius.",
-    "stockBadge": "Stock photo"
+    "noRestaurantsBody": "Nothing matched within {{km}} km. Try a wider radius."
   },
   "result": {
     "soloTitle": "Your pick",
@@ -131,7 +140,10 @@
     "demoNoticeBody": "No sync backend is configured, so this round only works between tabs in this browser. Open a second tab to try it out. To play with friends on their own phones, add Firebase settings (see README).",
     "backHome": "Back to start",
     "noBackendTitle": "Group rounds are not set up yet",
-    "noBackendBody": "This link only works in the browser that created it, because no sync backend is configured. Ask the host to add Firebase settings — the README explains how in about three minutes."
+    "noBackendBody": "This link only works in the browser that created it, because no sync backend is configured. Ask the host to add Firebase settings — the README explains how in about three minutes.",
+    "redealTitle": "No match yet",
+    "redealBody": "Nobody agreed on a card — a fresh deck with new options is being dealt.",
+    "roundOf": "Round {{round}} of {{max}}"
   },
   "language": {
     "label": "Language",
@@ -161,7 +173,10 @@
     "year": "Year",
     "overview": "Synopsis",
     "tags": "Good for",
-    "rated": "Rated"
+    "rated": "Rated",
+    "genres": "Genres",
+    "episodes": "Episodes",
+    "amenity": "Type"
   },
   "footer": {
     "attribution": "Movie data from TMDB. Drinks and recipes from TheCocktailDB and TheMealDB. Places from OpenStreetMap contributors.",
@@ -172,5 +187,17 @@
     "hint": "Tap the card for details",
     "backToSwiping": "Back to swiping",
     "stockPhoto": "Illustrative photo — not this exact place."
+  },
+  "custom": {
+    "title": "Your own deck",
+    "body": "Add the options you want to decide between — at least two. An image link is optional.",
+    "entryTitle": "Option",
+    "entryPlaceholder": "e.g. Rome",
+    "entryImage": "Image link (optional)",
+    "add": "Add",
+    "remove": "Remove {{title}}",
+    "limit": "Maximum of {{max}} entries reached.",
+    "start": "Start with {{count}} cards",
+    "needMore": "Add at least 2 options"
   }
 }

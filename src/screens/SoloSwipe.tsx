@@ -87,7 +87,8 @@ export function SoloSwipe() {
   }
 
   if (!deck.length) {
-    const isRestaurants = category === 'restaurants'
+    const isRestaurants =
+      category === 'restaurants' || category === 'sights'
     return (
       <Screen>
         {header}

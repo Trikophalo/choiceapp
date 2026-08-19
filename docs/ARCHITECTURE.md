@@ -613,3 +613,36 @@ gradient placeholder instead, which reads as designed rather than broken.
   the Firebase emulator is the M6 task in §9 and remains outstanding.
 - No PWA/offline shell, no rematch-with-top-10, no App Check yet — all §9 M5/M6
   items.
+
+### Expansion (second iteration)
+
+Added after launch, following the same provider/adapter conventions:
+
+- **Five new categories** — sights (Overpass tourism/historic, venue photos via
+  Commons tag/geosearch), TV shows (TVMaze, keyless+CORS; iTunes fallback),
+  anime (Jikan v4 with `sfw=true` plus a client-side rating guard), protein
+  recipes (TheMealDB protein categories + ingredient-keyword score, honestly
+  labelled — no invented macro figures), and a custom deck (user-typed entries,
+  persisted locally; the only category where images are optional).
+- **Cocktails rebuilt on letter search.** The free key caps `filter.php` at its
+  first ~25 alphabetical rows, which made decks start with "A". Decks now merge
+  `search.php?f=<letter>` across six seeded letters (full drink objects, no
+  hydration calls) and interleave the letters round-robin.
+- **iTunes via JSONP.** The iTunes Search API sends no CORS headers, so browser
+  fetches silently failed and movies fell back to the imageless snapshot. A
+  small JSONP helper (script-tag transport, `callback` param) restores keyless
+  posters for movies and TV.
+- **Restaurant images are matching dish photos** (product decision): a coffee
+  for the café, a stone-oven pizza for the pizzeria — TheMealDB area/search
+  thumbnails first (consistent food photography, seeded per card), curated
+  Commons queries as fallback. Flagged `imageIsStock`; the note lives in the
+  detail sheet, not on the card face.
+- **Group rounds redeal automatically.** On exhaustion the host deals a fresh
+  deck of unseen cards (`meta.seenIds`), resets likes/progress atomically via a
+  multi-path update, and bumps `meta.round` — capped at 3 rounds, after which
+  the ranked no-match screen appears. Security rules gained the matching
+  host-only, exhausted-state write permissions; existing Firebase projects must
+  re-paste `firebase/database.rules.json`.
+- **Images are mandatory** for every catalogue category: cards without real
+  cover art are dropped at the provider. Custom decks are the deliberate
+  exception.
