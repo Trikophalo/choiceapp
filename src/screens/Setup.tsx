@@ -65,7 +65,7 @@ export function Setup() {
   return (
     <Screen>
       <div className="py-3">
-        <BackLink to="/" label={t('common.back')} />
+        <BackLink to={`/categories?mode=${mode}`} label={t('common.back')} />
       </div>
 
       <h1 className="mb-6 text-3xl font-semibold tracking-tight">

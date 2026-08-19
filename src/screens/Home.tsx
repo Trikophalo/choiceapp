@@ -1,30 +1,21 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { CategoryId } from '@/types'
-import { CATEGORY_EMOJI, CATEGORY_ORDER, getProvider } from '@/providers'
-import { useAppStore } from '@/store/useAppStore'
-import { Button, Screen } from '@/components/ui'
+import { Screen } from '@/components/ui'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 type Mode = 'solo' | 'group'
 
+/**
+ * Step 1 of the flow: who is deciding. The category comes on its own screen
+ * afterwards — the mode changes what a round *is* (a private pick vs. a
+ * shared link), so it is settled first.
+ */
 export function Home() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const category = useAppStore((s) => s.category)
-  const setCategory = useAppStore((s) => s.setCategory)
-  const [mode, setMode] = useState<Mode>('solo')
 
-  const start = () => {
-    // Restaurants need a location before a deck can be built.
-    if (getProvider(category).capabilities.needsLocation) {
-      navigate(`/setup?mode=${mode}`)
-      return
-    }
-    navigate(mode === 'solo' ? '/solo' : '/create')
-  }
+  const choose = (mode: Mode) => navigate(`/categories?mode=${mode}`)
 
   return (
     <Screen>
@@ -43,58 +34,29 @@ export function Home() {
         </div>
       </header>
 
-      <div className="mt-3 mb-4">
-        <h1 className="text-[1.85rem] font-semibold leading-[1.15] tracking-tight sm:text-[2.4rem]">
-          {t('home.greeting')}
+      <div className="mt-8 mb-8">
+        <h1 className="text-[2.1rem] font-semibold leading-[1.15] tracking-tight sm:text-[2.4rem]">
+          {t('home.pickMode')}
         </h1>
         <p className="mt-2 text-ink-muted">{t('app.tagline')}</p>
       </div>
 
-      {/* Step 1 — who is deciding. Chosen before the category, because it
-          changes what the round is (a private pick vs. a shared link). */}
-      <section aria-labelledby="step-mode">
-        <h2 id="step-mode" className="mb-1.5 text-sm font-medium uppercase tracking-wider text-ink-faint">
-          {t('home.pickMode')}
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <ModeTile
-            label={t('home.modeSolo')}
-            hint={t('home.modeSoloHint')}
-            emoji="🙋"
-            selected={mode === 'solo'}
-            onSelect={() => setMode('solo')}
-          />
-          <ModeTile
-            label={t('home.modeGroup')}
-            hint={t('home.modeGroupHint')}
-            emoji="👥"
-            selected={mode === 'group'}
-            onSelect={() => setMode('group')}
-          />
-        </div>
-      </section>
+      <div className="flex flex-col gap-4">
+        <ModeCard
+          emoji="🙋"
+          label={t('home.modeSolo')}
+          hint={t('home.modeSoloHint')}
+          onSelect={() => choose('solo')}
+        />
+        <ModeCard
+          emoji="👥"
+          label={t('home.modeGroup')}
+          hint={t('home.modeGroupHint')}
+          onSelect={() => choose('group')}
+        />
+      </div>
 
-      {/* Step 2 — what to decide about. */}
-      <section aria-labelledby="step-category" className="mt-4">
-        <h2 id="step-category" className="mb-1.5 text-sm font-medium uppercase tracking-wider text-ink-faint">
-          {t('home.pickCategory')}
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          {CATEGORY_ORDER.map((id) => (
-            <CategoryTile
-              key={id}
-              id={id}
-              selected={category === id}
-              onSelect={() => setCategory(id)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <div className="mt-auto flex flex-col gap-2.5 pb-2 pt-4">
-        <Button onClick={start} full>
-          {mode === 'solo' ? t('home.start') : t('home.createSession')}
-        </Button>
+      <div className="mt-auto pb-4 pt-8">
         <p className="px-2 text-center text-xs leading-relaxed text-ink-faint">
           {t('footer.attribution')}
         </p>
@@ -103,74 +65,43 @@ export function Home() {
   )
 }
 
-function CategoryTile({
-  id,
-  selected,
-  onSelect,
-}: {
-  id: CategoryId
-  selected: boolean
-  onSelect: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={`group relative overflow-hidden rounded-3xl p-3.5 text-left transition ${
-        selected
-          ? 'bg-surface shadow-card ring-2 ring-accent'
-          : 'bg-surface shadow-soft ring-1 ring-line hover:-translate-y-0.5'
-      }`}
-    >
-      <div className="text-3xl" aria-hidden="true">{CATEGORY_EMOJI[id]}</div>
-      <div className="mt-2 font-semibold tracking-tight">
-        {t(`categories.${id}`)}
-      </div>
-      <div className="mt-0.5 line-clamp-2 min-h-[1.9rem] text-[0.8rem] leading-snug text-ink-muted">
-        {t(`categories.${id}Hint`)}
-      </div>
-      {selected && (
-        <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-sunset text-white">
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        </div>
-      )}
-    </button>
-  )
-}
-
-function ModeTile({
+function ModeCard({
+  emoji,
   label,
   hint,
-  emoji,
-  selected,
   onSelect,
 }: {
+  emoji: string
   label: string
   hint: string
-  emoji: string
-  selected: boolean
   onSelect: () => void
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      aria-pressed={selected}
-      className={`rounded-3xl p-3.5 text-left transition ${
-        selected
-          ? 'bg-surface shadow-card ring-2 ring-accent'
-          : 'bg-surface shadow-soft ring-1 ring-line hover:-translate-y-0.5'
-      }`}
+      className="group flex items-center gap-4 rounded-3xl bg-surface p-5 text-left shadow-soft ring-1 ring-line transition hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 active:scale-[0.99]"
     >
-      <div className="text-2xl" aria-hidden="true">{emoji}</div>
-      <div className="mt-2 font-semibold tracking-tight">{label}</div>
-      <div className="mt-0.5 line-clamp-2 min-h-[1.9rem] text-[0.8rem] leading-snug text-ink-muted">
-        {hint}
-      </div>
+      <span
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-sunk text-3xl"
+        aria-hidden="true"
+      >
+        {emoji}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-lg font-semibold tracking-tight">{label}</span>
+        <span className="mt-0.5 block text-sm leading-snug text-ink-muted">
+          {hint}
+        </span>
+      </span>
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5 shrink-0 text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-accent"
+        fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M9 6l6 6-6 6" />
+      </svg>
     </button>
   )
 }

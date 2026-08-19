@@ -8,7 +8,8 @@ import { fetchItunesMovies } from './itunesMovies'
 // /discover call returns a whole deck with German titles and synopses.
 // Attribution is required and rendered in the app footer.
 const BASE = 'https://api.themoviedb.org/3'
-const IMAGE = 'https://image.tmdb.org/t/p/w500'
+// w780 is the smallest TMDB size that stays sharp at 3x device pixels.
+const IMAGE = 'https://image.tmdb.org/t/p/w780'
 const API_KEY = import.meta.env.VITE_TMDB_KEY ?? ''
 
 export const hasTmdbKey = (): boolean => API_KEY.length > 0

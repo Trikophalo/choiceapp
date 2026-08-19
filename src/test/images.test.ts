@@ -3,16 +3,16 @@ import { upscaleArtwork } from '@/providers/itunesMovies'
 import { ACTIVITIES } from '@/data/activities'
 
 describe('iTunes artwork upscaling', () => {
-  it('replaces the 100px thumbnail with a poster-shaped full-size image', () => {
+  it('replaces the 100px thumbnail with a retina poster', () => {
     expect(
       upscaleArtwork('https://is1-ssl.mzstatic.com/image/thumb/abc/source/100x100bb.jpg'),
-    ).toBe('https://is1-ssl.mzstatic.com/image/thumb/abc/source/600x900bb.jpg')
+    ).toBe('https://is1-ssl.mzstatic.com/image/thumb/abc/source/1200x1800bb.jpg')
   })
 
   it('handles the sizes iTunes returns, with or without the bb suffix', () => {
     for (const size of ['60x60bb.jpg', '100x100.jpg', '30x30bb.png', '512x512bb.jpg']) {
       const result = upscaleArtwork(`https://example.com/img/${size}`)
-      expect(result).toBe('https://example.com/img/600x900bb.jpg')
+      expect(result).toBe('https://example.com/img/1200x1800bb.jpg')
     }
   })
 
@@ -56,5 +56,28 @@ describe('photo lookup budget', () => {
     } finally {
       globalThis.fetch = original
     }
+  })
+})
+
+describe('commonsFileUrl (OSM wikimedia_commons tag)', () => {
+  it('turns a File: tag into a sized Special:FilePath URL', async () => {
+    const { commonsFileUrl } = await import('@/lib/photos')
+    expect(commonsFileUrl('File:Cafe Beispiel Berlin.jpg')).toBe(
+      'https://commons.wikimedia.org/wiki/Special:FilePath/Cafe%20Beispiel%20Berlin.jpg?width=1280',
+    )
+  })
+
+  it('takes the first entry of a multi-value tag', async () => {
+    const { commonsFileUrl } = await import('@/lib/photos')
+    expect(commonsFileUrl('File:A.jpg;File:B.jpg')).toContain('A.jpg')
+  })
+
+  it('rejects categories, vectors and empty values', async () => {
+    const { commonsFileUrl } = await import('@/lib/photos')
+    expect(commonsFileUrl('Category:Restaurants in Berlin')).toBeUndefined()
+    expect(commonsFileUrl('File:Logo.svg')).toBeUndefined()
+    expect(commonsFileUrl('File:')).toBeUndefined()
+    expect(commonsFileUrl(undefined)).toBeUndefined()
+    expect(commonsFileUrl('Some plain text')).toBeUndefined()
   })
 })

@@ -11,6 +11,7 @@ interface IdentityFormProps {
   initialEmoji?: string
   busy?: boolean
   error?: boolean
+  backTo?: string
   onSubmit: (name: string, emoji: string) => void
 }
 
@@ -23,6 +24,7 @@ export function IdentityForm({
   initialEmoji = EMOJI_CHOICES[0],
   busy,
   error,
+  backTo = '/',
   onSubmit,
 }: IdentityFormProps) {
   const { t } = useTranslation()
@@ -34,7 +36,7 @@ export function IdentityForm({
   return (
     <Screen>
       <div className="py-3">
-        <BackLink to="/" label={t('common.back')} />
+        <BackLink to={backTo} label={t('common.back')} />
       </div>
 
       <form

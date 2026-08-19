@@ -46,6 +46,7 @@ export function CardArt({ src, title, seed, className = '', eager }: CardArtProp
       src={src}
       alt=""
       draggable={false}
+      decoding="async"
       loading={eager ? 'eager' : 'lazy'}
       onError={() => setFailed(true)}
       className={`h-full w-full object-cover select-none ${className}`}

@@ -1,5 +1,6 @@
 import { HashRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { Home } from '@/screens/Home'
+import { Categories } from '@/screens/Categories'
 import { Setup } from '@/screens/Setup'
 import { SoloSwipe } from '@/screens/SoloSwipe'
 import { SoloResult } from '@/screens/Result'
@@ -14,6 +15,7 @@ export function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/categories" element={<Categories />} />
         <Route path="/setup" element={<Setup />} />
         <Route path="/solo" element={<SoloSwipe />} />
         <Route path="/result" element={<SoloResult />} />

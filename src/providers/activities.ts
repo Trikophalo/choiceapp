@@ -18,7 +18,7 @@ export const activitiesProvider: DeckProvider = {
     // simply leaves imageUrl undefined and the gradient tile takes over.
     const photos = await findPhotos(
       picked.map((activity) => activity.photo),
-      800,
+      1280,
       signal,
     )
 

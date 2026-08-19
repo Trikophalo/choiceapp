@@ -33,13 +33,13 @@ interface ITunesResult {
 }
 
 /**
- * artworkUrl100 is a 100px thumbnail. The path segment encodes the size, so
- * asking for a poster-shaped box yields a full-resolution, correctly
- * proportioned image instead of a blurry upscale.
+ * artworkUrl100 is a 100px thumbnail, but the path segment encodes the size
+ * and the CDN renders any requested box on demand. 1200x1800 keeps a movie
+ * poster sharp on a 3x phone display instead of a blurry upscale.
  */
 export function upscaleArtwork(url: string | undefined): string | undefined {
   if (!url) return undefined
-  return url.replace(/\/\d+x\d+(bb)?\.(jpg|png)$/i, '/600x900bb.jpg')
+  return url.replace(/\/\d+x\d+(bb)?\.(jpg|png)$/i, '/1200x1800bb.jpg')
 }
 
 function toCard(item: ITunesResult): Card {

@@ -55,6 +55,7 @@ export function CreateSession() {
 
   return (
     <IdentityForm
+      backTo="/categories?mode=group"
       title={t('home.createSession')}
       body={t('group.joinBody')}
       submitLabel={t('home.createSession')}

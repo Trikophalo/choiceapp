@@ -1,7 +1,7 @@
 import type { Card, DeckProvider, DeckOptions, GeoPoint } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
-import { findPhotos } from '@/lib/photos'
+import { commonsFileUrl, findPhoto, findPhotoNear } from '@/lib/photos'
 
 /**
  * Restaurants run a dual-provider strategy:
@@ -75,16 +75,20 @@ function formatDistance(meters: number | null): string | undefined {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`
 }
 
+function elementPoint(element: OverpassElement): GeoPoint | null {
+  return element.center
+    ? { lat: element.center.lat, lng: element.center.lon }
+    : element.lat != null && element.lon != null
+      ? { lat: element.lat, lng: element.lon }
+      : null
+}
+
 function osmToCard(element: OverpassElement, origin: GeoPoint): Card | null {
   const tags = element.tags ?? {}
   const name = tags.name
   if (!name) return null // Unnamed nodes make useless cards.
 
-  const point = element.center
-    ? { lat: element.center.lat, lng: element.center.lon }
-    : element.lat != null && element.lon != null
-      ? { lat: element.lat, lng: element.lon }
-      : null
+  const point = elementPoint(element)
 
   const cuisine = prettyCuisine(tags.cuisine)
   const street = [tags['addr:street'], tags['addr:housenumber']]
@@ -103,7 +107,9 @@ function osmToCard(element: OverpassElement, origin: GeoPoint): Card | null {
     id: `osm:${element.type}/${element.id}`,
     title: name,
     subtitle: descriptionParts.join(' · ') || undefined,
-    imageUrl: tags.image?.startsWith('https://') ? tags.image : undefined,
+    imageUrl: tags.image?.startsWith('https://')
+      ? tags.image
+      : commonsFileUrl(tags.wikimedia_commons),
     badge: formatDistance(meters) ?? cuisine,
     meta: {
       ...(cuisine ? { cuisine } : {}),
@@ -141,31 +147,53 @@ out center 120;`
         retries: 0,
         signal,
       })
-      const cards = (res.elements ?? [])
-        .map((el) => osmToCard(el, location))
-        .filter((card): card is Card => card !== null)
+      const points = new Map<string, GeoPoint>()
+      const cards: Card[] = []
+      for (const el of res.elements ?? []) {
+        const card = osmToCard(el, location)
+        if (!card) continue
+        const at = elementPoint(el)
+        if (at) points.set(card.id, at)
+        cards.push(card)
+      }
       if (!cards.length) return []
 
       const deck = seededShuffle(cards, seed).slice(0, size)
 
-      // OSM has no photos. Rather than a wall of blank tiles, fill in a
-      // cuisine-typical photograph — flagged as illustrative on the card, so
-      // nobody mistakes it for a picture of that particular restaurant.
+      // OSM elements rarely carry a photo tag, so the rest resolve one in two
+      // steps, best match first:
+      //   1. a Commons photo taken AT the venue's coordinates (geosearch) —
+      //      as close to "a picture of this restaurant" as keyless data gets;
+      //   2. failing that, a cuisine-typical photo, labelled as illustrative
+      //      so it cannot be mistaken for the actual place.
       const needsPhoto = deck.filter((card) => !card.imageUrl)
       if (needsPhoto.length) {
-        const photos = await findPhotos(
-          needsPhoto.map(
-            (card) => `${card.meta?.cuisine ?? 'restaurant'} food restaurant`,
-          ),
-          800,
-          signal,
-        )
-        needsPhoto.forEach((card, index) => {
-          if (photos[index]) {
-            card.imageUrl = photos[index] ?? undefined
+        const resolve = async (card: Card): Promise<void> => {
+          const at = points.get(card.id)
+          if (at) {
+            const near = await findPhotoNear(at, 1280, signal)
+            if (near) {
+              card.imageUrl = near
+              return
+            }
+          }
+          const generic = await findPhoto(
+            `${card.meta?.cuisine ?? 'restaurant'} food restaurant`,
+            1280,
+            signal,
+          )
+          if (generic) {
+            card.imageUrl = generic
             card.imageIsStock = true
           }
-        })
+        }
+
+        // Photos enhance, never gate: whatever has not resolved when the
+        // budget runs out stays a gradient tile.
+        await Promise.race([
+          Promise.all(needsPhoto.map(resolve)),
+          new Promise((finish) => setTimeout(finish, 5000)),
+        ])
       }
 
       return deck
@@ -210,7 +238,7 @@ function googleToCard(place: GooglePlace, origin: GeoPoint): Card {
     // The actual Google photo of the place. maxWidthPx keeps portrait shots
     // from being cropped to a letterbox on the card.
     imageUrl: photo
-      ? `https://places.googleapis.com/v1/${photo}/media?maxHeightPx=1000&maxWidthPx=800&key=${GOOGLE_KEY}`
+      ? `https://places.googleapis.com/v1/${photo}/media?maxHeightPx=1600&maxWidthPx=1280&key=${GOOGLE_KEY}`
       : undefined,
     badge: formatDistance(meters) ?? place.primaryTypeDisplayName?.text,
     meta: {

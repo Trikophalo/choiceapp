@@ -1,3 +1,4 @@
+import type { GeoPoint } from '@/types'
 import { fetchJson } from './http'
 
 /**
@@ -24,11 +25,89 @@ interface CommonsResponse {
   }
 }
 
+function extractThumb(res: CommonsResponse): string | null {
+  const pages = Object.values(res.query?.pages ?? {})
+  return (
+    pages
+      .map((page) => page.imageinfo?.[0]?.thumburl ?? page.imageinfo?.[0]?.url)
+      .find(
+        (candidate): candidate is string =>
+          typeof candidate === 'string' &&
+          candidate.startsWith('https://') &&
+          // Skip vector/animated assets that render poorly as a card photo.
+          !/\.(svg|gif)$/i.test(candidate),
+      ) ?? null
+  )
+}
+
+/**
+ * Turns an OSM `wikimedia_commons=File:…` tag into a sized thumbnail URL.
+ * Mappers attach these to the venue itself, so when the tag exists it is a
+ * genuine photo of that restaurant — the best match available without a key.
+ * Special:FilePath needs no API call; it redirects straight to the thumb.
+ */
+export function commonsFileUrl(
+  tag: string | undefined,
+  width = 1280,
+): string | undefined {
+  if (!tag) return undefined
+  const first = tag.split(';')[0]?.trim() ?? ''
+  if (!/^File:/i.test(first)) return undefined // e.g. Category:… is a folder
+  const name = first.replace(/^File:/i, '').trim()
+  if (!name || !/\.(jpe?g|png|webp)$/i.test(name)) return undefined
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(
+    name,
+  )}?width=${width}`
+}
+
+/**
+ * Photos taken AT a location (Commons geosearch). For a restaurant with no
+ * tagged image this is the closest thing to a picture of the actual venue:
+ * a photo captured within ~80 m of its coordinates.
+ */
+export async function findPhotoNear(
+  point: GeoPoint,
+  width = 1280,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const key = `geo:${point.lat.toFixed(5)},${point.lng.toFixed(5)}@${width}`
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached
+
+  const params = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    generator: 'geosearch',
+    ggscoord: `${point.lat}|${point.lng}`,
+    ggsradius: '80',
+    ggslimit: '4',
+    ggsnamespace: '6',
+    prop: 'imageinfo',
+    iiprop: 'url',
+    iiurlwidth: String(width),
+  })
+
+  try {
+    const res = await fetchJson<CommonsResponse>(`${ENDPOINT}?${params}`, {
+      signal,
+      retries: 0,
+      timeoutMs: 5000,
+    })
+    const url = extractThumb(res)
+    cache.set(key, url)
+    return url
+  } catch {
+    cache.set(key, null)
+    return null
+  }
+}
+
 /** Requests a thumbnail at `width`, so Commons resizes server-side rather than
  *  us shipping a 4000px original to a phone. */
 export async function findPhoto(
   query: string,
-  width = 800,
+  width = 1280,
   signal?: AbortSignal,
 ): Promise<string | null> {
   const key = `${query}@${width}`
@@ -54,18 +133,7 @@ export async function findPhoto(
       retries: 0,
       timeoutMs: 5000,
     })
-    const pages = Object.values(res.query?.pages ?? {})
-    const url =
-      pages
-        .map((page) => page.imageinfo?.[0]?.thumburl ?? page.imageinfo?.[0]?.url)
-        .find(
-          (candidate): candidate is string =>
-            typeof candidate === 'string' &&
-            candidate.startsWith('https://') &&
-            // Skip vector/animated assets that render poorly as a card photo.
-            !/\.(svg|gif)$/i.test(candidate),
-        ) ?? null
-
+    const url = extractThumb(res)
     cache.set(key, url)
     return url
   } catch {
@@ -83,7 +151,7 @@ export async function findPhoto(
  */
 export async function findPhotos(
   queries: readonly string[],
-  width = 800,
+  width = 1280,
   signal?: AbortSignal,
   budgetMs = 4000,
 ): Promise<Array<string | null>> {

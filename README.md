@@ -1,8 +1,8 @@
 # SwipeDecide
 
-A Tinder-style decision app. Swipe right or left on restaurants, cocktails, recipes, movies and activities — alone or with friends over a shared link. **Solo:** the first card you like wins. **Group:** the first card *everyone* likes wins, and the round ends for all devices at once.
+A Tinder-style decision app. Pick who is deciding (solo or group), pick a category — restaurants, cocktails, recipes, movies, activities — and swipe. **Solo:** the first card you like wins. **Group:** the first card *everyone* likes wins, and the round ends for all devices at once.
 
-Static site, deployable to GitHub Pages. Full UI in German and English.
+Static site, deployable to GitHub Pages. Full UI in German and English. Ready to be wrapped as native iOS/Android apps with Capacitor — see [`docs/MOBILE-APPS.md`](docs/MOBILE-APPS.md).
 
 ## Quick start
 
@@ -88,7 +88,7 @@ Cocktails, recipes and activities need no configuration at all.
 
 Each provider is one file behind a common interface, so replacing a dead source is a contained change. Every network-backed category degrades to a usable state rather than an error screen.
 
-**Images.** Every category shows real photography without any API key: recipes and cocktails at full resolution from their own APIs, movie posters from iTunes Search, and activities from Wikimedia Commons. Where an image only illustrates the category rather than the specific place — Commons photos for OpenStreetMap restaurants, for instance — the card says so rather than implying it is that venue. Photo lookups are bounded by a time budget, so a slow source costs a gradient tile, never a delayed deck.
+**Images.** Every category shows real photography without any API key, and every source is requested at retina size (≥1200 px — cards render at up to 3× device pixels, so smaller sources read as blurry): recipes and cocktails at their full native resolution, movie posters at 1200×1800 from iTunes Search (TMDB at w780 when keyed), and activities from Wikimedia Commons at 1280 px. Restaurants resolve the best available match in order: a photo mappers attached to the venue itself (OSM `image`/`wikimedia_commons` tags) → a Commons photo taken within 80 m of its coordinates → a cuisine-typical photo, which is the only tier labelled as illustrative. Photo lookups are bounded by a time budget, so a slow source costs a gradient tile, never a delayed deck.
 
 **Details before deciding.** Tapping a card (or the ⓘ button) opens the full detail sheet — a film's synopsis, a dish's ingredients and method, a restaurant's address. Opening and closing it never counts as a swipe.
 
@@ -100,6 +100,7 @@ Movie data from [TMDB](https://www.themoviedb.org) — this product uses the TMD
 
 ## Docs
 
+- [`docs/MOBILE-APPS.md`](docs/MOBILE-APPS.md) — publishing as iOS/Android apps via Capacitor (DE + EN)
 - [`docs/SETUP-FIREBASE.md`](docs/SETUP-FIREBASE.md) — make group links work across devices (DE + EN)
 - [`docs/SETUP-RESTAURANT-PHOTOS.md`](docs/SETUP-RESTAURANT-PHOTOS.md) — enable Google restaurant photos (DE + EN)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — full technical plan, API evaluation, data model and risk register

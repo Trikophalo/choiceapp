@@ -51,7 +51,7 @@ export function SoloSwipe() {
   const header = useMemo(
     () => (
       <div className="flex items-center justify-between py-3">
-        <BackLink to="/" label={t('common.back')} />
+        <BackLink to="/categories?mode=solo" label={t('common.back')} />
         <div className="flex items-center gap-2 text-sm font-medium text-ink-muted">
           <span aria-hidden="true">{CATEGORY_EMOJI[category]}</span>
           {t(`categories.${category}`)}
