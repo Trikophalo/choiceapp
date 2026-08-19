@@ -81,8 +81,8 @@ async function fetchFromAniList(
       query: ANILIST_QUERY,
       variables: { page, perPage: 50 },
     }),
-    retries: 1,
-    timeoutMs: 10_000,
+    retries: 0,
+    timeoutMs: 8000,
     signal,
   })
 
@@ -139,7 +139,7 @@ async function fetchFromJikan(
 
   const res = await fetchJson<{ data: JikanAnime[] }>(
     `${JIKAN}/top/anime?filter=bypopularity&sfw=true&limit=25&page=${page}`,
-    { signal, retries: 1, timeoutMs: 10_000 },
+    { signal, retries: 0, timeoutMs: 8000 },
   )
 
   const pool = (res.data ?? []).filter((anime) => {

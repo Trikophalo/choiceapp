@@ -144,7 +144,8 @@
     "redealTitle": "Noch kein Match",
     "redealBody": "Keine Karte hat allen gefallen — ein neuer Stapel mit neuen Optionen wird gemischt.",
     "roundOf": "Runde {{round}} von {{max}}",
-    "liveSync": "Live-Sync aktiv — dieser Link funktioniert auf jedem Gerät."
+    "liveSync": "Live-Sync aktiv — dieser Link funktioniert auf jedem Gerät.",
+    "createFailed": "Die Runde konnte nicht synchronisiert werden. Falls Firebase gerade erst eingerichtet wurde: prüfe, ob die Sicherheitsregeln (Schritt 4 der Anleitung) eingefügt und veröffentlicht sind und die anonyme Anmeldung (Schritt 3) aktiviert ist — dann nochmal versuchen."
   },
   "language": {
     "label": "Sprache",

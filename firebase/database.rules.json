@@ -7,6 +7,7 @@
         "meta": {
           ".write": "auth != null && (!data.exists() || data.child('hostId').val() === auth.uid)",
           "status": {
+            ".write": "auth != null && root.child('sessions/' + $sid + '/participants/' + auth.uid).exists()",
             ".validate": "newData.isString() && newData.val().matches(/^(lobby|active|matched|exhausted|expired)$/)"
           },
           "hostId": {

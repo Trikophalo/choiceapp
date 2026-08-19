@@ -104,26 +104,27 @@ export class FirebaseSync implements SyncAdapter {
     const uid = await this.signIn()
     const { db, dbApi } = await this.load()
 
-    await dbApi.set(dbApi.ref(db, this.path(input.sessionId)), {
+    // Multi-path update, NOT a set() on the session node: RTDB checks write
+    // permission per path, and the rules grant writes on `meta` and
+    // `participants/$uid` — a parent-level set has no granting rule and is
+    // denied outright (the "create a group" PERMISSION_DENIED bug).
+    await dbApi.update(dbApi.ref(db, this.path(input.sessionId)), {
       meta: {
         v: 1,
         category: input.category,
         status: 'lobby',
         hostId: uid,
         createdAt: dbApi.serverTimestamp(),
-        startedAt: null,
         locale: input.locale,
         ...(input.filters ? { filters: input.filters } : {}),
       },
-      participants: {
-        [uid]: {
-          name: input.host.name,
-          emoji: input.host.emoji,
-          joinedAt: dbApi.serverTimestamp(),
-          online: true,
-          progress: 0,
-          done: false,
-        },
+      [`participants/${uid}`]: {
+        name: input.host.name,
+        emoji: input.host.emoji,
+        joinedAt: dbApi.serverTimestamp(),
+        online: true,
+        progress: 0,
+        done: false,
       },
     })
     await this.trackPresence(input.sessionId, uid)

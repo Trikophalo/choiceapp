@@ -144,7 +144,8 @@
     "redealTitle": "No match yet",
     "redealBody": "Nobody agreed on a card — a fresh deck with new options is being dealt.",
     "roundOf": "Round {{round}} of {{max}}",
-    "liveSync": "Live sync active — this link works on any device."
+    "liveSync": "Live sync active — this link works on any device.",
+    "createFailed": "Could not sync the round. If Firebase was just set up, make sure the security rules (setup step 4) are pasted and published, and that anonymous sign-in (step 3) is enabled — then try again."
   },
   "language": {
     "label": "Language",

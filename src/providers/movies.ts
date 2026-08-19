@@ -3,6 +3,7 @@ import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle } from '@/lib/random'
 import { FALLBACK_MOVIES } from '@/data/fallbackMovies'
 import { fetchItunesMovies } from './itunesMovies'
+import { fetchAppleTopMovies, fetchCinemeta } from './movieSources'
 
 // TMDB: free non-commercial key, CORS-enabled, and fully localised — a single
 // /discover call returns a whole deck with German titles and synopses.
@@ -51,17 +52,27 @@ export const moviesProvider: DeckProvider = {
     const excluded = new Set(excludeIds ?? [])
 
     if (!API_KEY) {
-      // No TMDB key (the default for a fresh deployment). iTunes Search needs
-      // no key at all and ships real posters, so the category stays useful
-      // rather than falling back to text-only cards.
-      try {
-        const cards = await fetchItunesMovies(options)
-        if (cards.length) return cards
-      } catch (err) {
-        if (signal?.aborted) throw err
+      // No TMDB key (the default). Three independent keyless sources, all
+      // shipping real posters, tried in order of richness — one of them
+      // failing (CORS, downtime) must never leave the category imageless:
+      //   1. iTunes Search via JSONP (localised descriptions),
+      //   2. Apple's marketing RSS (top movies per storefront, CORS),
+      //   3. Cinemeta's open catalogue (CORS by protocol design).
+      const tiers: Array<() => Promise<Card[]>> = [
+        () => fetchItunesMovies(options),
+        () => fetchAppleTopMovies(options),
+        () => fetchCinemeta('movie', options),
+      ]
+      for (const tier of tiers) {
+        try {
+          const cards = (await tier()).filter((card) => card.imageUrl)
+          if (cards.length) return cards
+        } catch (err) {
+          if (signal?.aborted) throw err
+        }
       }
       if (import.meta.env.DEV) {
-        console.info('[movies] iTunes unavailable, using bundled snapshot')
+        console.info('[movies] all keyless sources failed, using snapshot')
       }
       return seededShuffle(FALLBACK_MOVIES, seed)
         .filter((movie) => !excluded.has(`tmdb:${movie.id}`))
@@ -94,12 +105,18 @@ export const moviesProvider: DeckProvider = {
       return seededShuffle(results, seed).slice(0, size).map(toCard)
     } catch (err) {
       if (signal?.aborted) throw err
-      // TMDB failed despite a key — try the keyless source before giving up.
-      try {
-        const cards = await fetchItunesMovies(options)
-        if (cards.length) return cards
-      } catch {
-        // fall through to the bundled snapshot
+      // TMDB failed despite a key — try the keyless tiers before giving up.
+      for (const tier of [
+        () => fetchItunesMovies(options),
+        () => fetchAppleTopMovies(options),
+        () => fetchCinemeta('movie', options),
+      ]) {
+        try {
+          const cards = (await tier()).filter((card) => card.imageUrl)
+          if (cards.length) return cards
+        } catch {
+          // next tier
+        }
       }
       if (import.meta.env.DEV) {
         console.info('[movies] all sources failed, using bundled snapshot')

@@ -11,6 +11,8 @@ interface IdentityFormProps {
   initialEmoji?: string
   busy?: boolean
   error?: boolean
+  /** Overrides the generic error copy when set. */
+  errorText?: string
   backTo?: string
   onSubmit: (name: string, emoji: string) => void
 }
@@ -24,6 +26,7 @@ export function IdentityForm({
   initialEmoji = EMOJI_CHOICES[0],
   busy,
   error,
+  errorText,
   backTo = '/',
   onSubmit,
 }: IdentityFormProps) {
@@ -89,7 +92,9 @@ export function IdentityForm({
         </fieldset>
 
         {error && (
-          <p className="mt-5 text-sm text-nope">{t('swipe.errorBody')}</p>
+          <p className="mt-5 text-sm leading-relaxed text-nope">
+            {errorText ?? t('swipe.errorBody')}
+          </p>
         )}
 
         <div className="mt-auto pb-4 pt-8">

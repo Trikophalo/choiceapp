@@ -81,3 +81,15 @@ describe('commonsFileUrl (OSM wikimedia_commons tag)', () => {
     expect(commonsFileUrl('Some plain text')).toBeUndefined()
   })
 })
+
+describe('cinemeta poster sizing', () => {
+  it('upgrades small/medium renditions to large and passes others through', async () => {
+    const { largePoster } = await import('@/providers/movieSources')
+    expect(largePoster('https://images.metahub.space/poster/medium/tt0111161/img'))
+      .toBe('https://images.metahub.space/poster/large/tt0111161/img')
+    expect(largePoster('https://images.metahub.space/poster/small/tt1/img'))
+      .toBe('https://images.metahub.space/poster/large/tt1/img')
+    expect(largePoster('https://example.com/p.jpg')).toBe('https://example.com/p.jpg')
+    expect(largePoster(undefined)).toBeUndefined()
+  })
+})

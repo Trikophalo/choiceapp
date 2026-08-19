@@ -39,6 +39,7 @@ export function GroupSession() {
   const { displayName, emoji, setIdentity, radiusM, location } = useAppStore()
 
   const [joining, setJoining] = useState(false)
+  const [joinError, setJoinError] = useState(false)
   const [localIndex, setLocalIndex] = useState(0)
   const claimAttempted = useRef<string | null>(null)
   const redealStarted = useRef<number>(0)
@@ -263,11 +264,18 @@ export function GroupSession() {
         initialName={displayName}
         initialEmoji={emoji}
         busy={joining}
+        error={joinError}
+        errorText={t('group.createFailed')}
         onSubmit={(name, chosenEmoji) => {
           setIdentity(name, chosenEmoji)
           setJoining(true)
+          setJoinError(false)
           void sync
             .join({ sessionId: sessionId!, name, emoji: chosenEmoji })
+            .catch((err) => {
+              console.error('[group] join failed:', err)
+              setJoinError(true)
+            })
             .finally(() => setJoining(false))
         }}
       />
@@ -381,6 +389,7 @@ function Lobby({
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [startError, setStartError] = useState(false)
   const sync = useMemo(() => getSync(), [])
 
   const link = `${window.location.origin}${import.meta.env.BASE_URL}#/s/${sessionId}`
@@ -482,8 +491,12 @@ function Lobby({
             <Button
               onClick={async () => {
                 setStarting(true)
+                setStartError(false)
                 try {
                   await onStart()
+                } catch (err) {
+                  console.error('[group] startRound failed:', err)
+                  setStartError(true)
                 } finally {
                   setStarting(false)
                 }
@@ -495,6 +508,11 @@ function Lobby({
                 ? t('group.startingRound')
                 : t('group.startRound')}
             </Button>
+            {startError && (
+              <p className="mt-3 text-center text-sm text-nope">
+                {t('group.createFailed')}
+              </p>
+            )}
             <p className="mt-3 text-center text-xs text-ink-faint">
               {t('group.startRoundHint')}
             </p>

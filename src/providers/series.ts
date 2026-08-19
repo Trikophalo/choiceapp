@@ -2,6 +2,7 @@ import type { Card, DeckProvider, DeckOptions } from '@/types'
 import { fetchJson, truncate } from '@/lib/http'
 import { seededShuffle, hashSeed } from '@/lib/random'
 import { fetchItunesSeries } from './itunesMovies'
+import { fetchCinemeta } from './movieSources'
 
 /**
  * TV series. Primary source: TVMaze — keyless, CORS-enabled, real cover art
@@ -94,10 +95,20 @@ export const seriesProvider: DeckProvider = {
     } catch (err) {
       if (signal?.aborted) throw err
       if (import.meta.env.DEV) {
-        console.info('[series] TVMaze failed, trying iTunes:', err)
+        console.info('[series] TVMaze failed, trying fallbacks:', err)
       }
-      const fallback = await fetchItunesSeries(opts).catch(() => [])
-      return fallback.filter((card) => card.imageUrl)
+      for (const tier of [
+        () => fetchItunesSeries(opts),
+        () => fetchCinemeta('series', opts),
+      ]) {
+        try {
+          const cards = (await tier()).filter((card) => card.imageUrl)
+          if (cards.length) return cards
+        } catch {
+          // next tier
+        }
+      }
+      return []
     }
   },
 }

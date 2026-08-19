@@ -36,7 +36,10 @@ export function CreateSession() {
         host: { name, emoji: chosenEmoji },
       })
       navigate(`/s/${sessionId}`, { replace: true })
-    } catch {
+    } catch (err) {
+      // Diagnosable from the device: permission-denied means the security
+      // rules are missing/stale; auth errors mean anonymous sign-in is off.
+      console.error('[group] createSession failed:', err)
       created.current = false
       setCreating(false)
       setError(true)
@@ -60,6 +63,7 @@ export function CreateSession() {
       body={t('group.joinBody')}
       submitLabel={t('home.createSession')}
       error={error}
+      errorText={t('group.createFailed')}
       initialName={displayName}
       initialEmoji={emoji}
       onSubmit={(name, chosenEmoji) => {
